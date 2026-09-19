@@ -1,0 +1,8 @@
+{
+  "name": "STAR-KIDS SDN Kebonagung Kota Pasuruan",
+  "description": "Sistem Tata Tertib & Apresiasi Karakter Integrasi Digital Sekolah - UPT SDN Kebonagung Kota Pasuruan",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
