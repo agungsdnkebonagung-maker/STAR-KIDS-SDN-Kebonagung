@@ -411,13 +411,13 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         {/* Official Header */}
         <div className="p-6 border-b border-slate-200 text-center space-y-1">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            PEMERINTAH KOTA PASURUAN &bull; DINAS PENDIDIKAN DAN KEBUDAYAAN
+            PEMERINTAH {(systemSettings.schoolProfile?.kota || 'KOTA PASURUAN').toUpperCase()} &bull; DINAS PENDIDIKAN DAN KEBUDAYAAN
           </p>
           <h2 className="text-lg font-black text-slate-900 tracking-wide uppercase">
-            UPT SATUAN PENDIDIKAN FORMAL SDN KEBONAGUNG
+            {systemSettings.schoolProfile?.namaSekolah || 'UPT SATUAN PENDIDIKAN FORMAL SDN KEBONAGUNG'}
           </h2>
           <p className="text-xs text-slate-600">
-            Jl. Raya Kebonagung, Kec. Purworejo, Kota Pasuruan, Jawa Timur 67116 &bull; NPSN: 20535400
+            {systemSettings.schoolProfile?.alamatJalan || 'Jl. Raya Kebonagung'}, {systemSettings.schoolProfile?.kecamatan ? `Kec. ${systemSettings.schoolProfile.kecamatan}, ` : ''}{systemSettings.schoolProfile?.kota || 'Kota Pasuruan'}, {systemSettings.schoolProfile?.provinsi || 'Jawa Timur'} {systemSettings.schoolProfile?.kodePos || '67116'} &bull; NPSN: {systemSettings.schoolProfile?.npsn || '20535384'}
           </p>
           <div className="pt-2">
             <span className="inline-block border-t-2 border-b-2 border-slate-900 py-0.5 px-4 text-xs font-black uppercase tracking-wider">

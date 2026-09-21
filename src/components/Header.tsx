@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SchoolLogo } from './SchoolLogo';
-import { UserRole } from '../types';
+import { UserRole, SchoolProfileData } from '../types';
 import { 
   LayoutDashboard, 
   ClipboardCheck,
@@ -22,7 +22,10 @@ import {
   Menu, 
   X,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  Globe,
+  Phone,
+  RefreshCw
 } from 'lucide-react';
 
 export type AppTab = 
@@ -37,8 +40,10 @@ export type AppTab =
   | 'laporan'
   | 'sync'
   | 'siswa'
+  | 'pegawai'
   | 'audit'
-  | 'pengaturan';
+  | 'pengaturan'
+  | 'webprofil';
 
 interface HeaderProps {
   currentTab: AppTab;
@@ -46,6 +51,10 @@ interface HeaderProps {
   role: UserRole;
   onOpenLogin: () => void;
   onLogout: () => void;
+  schoolProfile?: SchoolProfileData;
+  tahunAjaran?: string;
+  onRefreshData?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -53,7 +62,11 @@ export const Header: React.FC<HeaderProps> = ({
   setCurrentTab,
   role,
   onOpenLogin,
-  onLogout
+  onLogout,
+  schoolProfile,
+  tahunAjaran,
+  onRefreshData,
+  isRefreshing = false
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -85,8 +98,10 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'laporan', label: 'Pusat Laporan & Surat', icon: FileText, desc: 'Cetak surat panggilan & rekap resmi' },
     { id: 'sync', label: 'Sinkronisasi Canva Sheet', icon: FileSpreadsheet, desc: 'Integrasi cloud spreadsheet & backup' },
     { id: 'siswa', label: 'Data Siswa & Wali', icon: Users, adminOnly: true, desc: 'Kelola biodata murid (Hanya Admin)' },
+    { id: 'pegawai', label: 'Data Pegawai & Guru', icon: Users, desc: 'Kepala Sekolah, Wali Kelas, Guru Mapel, TU & Staff' },
     { id: 'audit', label: 'Log Aktivitas (Audit)', icon: History, adminOnly: true, desc: 'Riwayat modifikasi data (Hanya Admin)' },
     { id: 'pengaturan', label: 'Pengaturan Sekolah', icon: Settings, adminOnly: true, desc: 'Rombel, master data & kata sandi' },
+    { id: 'webprofil', label: 'Website Profil Sekolah', icon: Globe, desc: 'Company profile publik UPT SDN Kebonagung' },
   ];
 
   const visibleSecondary = secondaryNavItems.filter(item => !item.adminOnly || role === 'admin');
@@ -104,11 +119,33 @@ export const Header: React.FC<HeaderProps> = ({
               RESMI TPPK
             </span>
             <span className="font-semibold text-blue-50 truncate text-[11px] sm:text-xs">
-              SDN Kebonagung Kota Pasuruan &bull; Sekolah Ramah Anak & Berkarakter Juara
+              {schoolProfile?.namaSingkat || 'SDN Kebonagung'} Kota Pasuruan &bull; NPSN: {schoolProfile?.npsn || '20535384'} &bull; {schoolProfile?.tagline || 'Sekolah Ramah Anak & Berkarakter Juara'}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-4 text-blue-100 text-[11px]">
-            <span className="bg-white/10 px-2 py-0.5 rounded-md font-medium">Tahun Ajaran 2026/2027</span>
+            {schoolProfile?.noTeleponPengaduan && (
+              <a
+                href={`tel:${schoolProfile.noTeleponPengaduan}`}
+                className="inline-flex items-center gap-1 text-amber-200 hover:text-amber-100 font-bold bg-white/15 px-2.5 py-0.5 rounded-full transition-colors cursor-pointer"
+                title="Nomor Siaga Pengaduan Sekolah & TPPK"
+              >
+                <Phone className="w-3 h-3 text-amber-300" />
+                <span>Pengaduan: {schoolProfile.noTeleponPengaduan}</span>
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setCurrentTab('webprofil')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-bold transition cursor-pointer ${
+                currentTab === 'webprofil'
+                  ? 'bg-amber-400 text-blue-950 shadow-xs'
+                  : 'bg-white/15 hover:bg-white/25 text-white'
+              }`}
+            >
+              <Globe className="w-3 h-3 text-amber-300" />
+              <span>🌐 Web Profil Sekolah</span>
+            </button>
+            <span className="bg-white/10 px-2 py-0.5 rounded-md font-medium">Tahun Ajaran {tahunAjaran || '2026/2027'}</span>
             <span>&bull;</span>
             <span className="text-emerald-300 font-bold flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-md">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -128,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-3 cursor-pointer group shrink-0"
           >
             <div className="relative">
-              <SchoolLogo size={46} />
+              <SchoolLogo size={46} customLogoUrl={schoolProfile?.logoUrl} />
               <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-400 rounded-full border-2 border-white flex items-center justify-center">
                 <span className="text-[8px] text-amber-950 font-black">★</span>
               </div>
@@ -139,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
                   STAR-KIDS
                 </span>
                 <span className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                  <span>★</span> SDN Kebonagung
+                  <span>★</span> {schoolProfile?.namaSingkat || 'SDN Kebonagung'} &bull; NPSN: {schoolProfile?.npsn || '20535384'}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
@@ -235,6 +272,20 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* User Role & Auth Action */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Refresh Data Button */}
+            {onRefreshData && (
+              <button
+                type="button"
+                onClick={onRefreshData}
+                disabled={isRefreshing}
+                title="Update dan refresh data sistem"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 border border-blue-200 rounded-xl transition cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
+                <span className="hidden md:inline">Refresh Data</span>
+              </button>
+            )}
+
             {role === 'admin' ? (
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex flex-col items-end">
@@ -258,16 +309,24 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="hidden sm:flex flex-col items-end">
                   <span className="text-xs font-medium text-slate-600 flex items-center gap-1">
                     <Eye className="w-3.5 h-3.5 text-slate-500" />
-                    Mode Tamu
+                    Orang Tua / Wali
                   </span>
-                  <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">Murid & Wali</span>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">Hanya Melihat</span>
                 </div>
                 <button
                   onClick={onOpenLogin}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-white bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-800 hover:to-indigo-800 rounded-xl shadow-xs hover:shadow-md transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 rounded-lg shadow-xs transition-all cursor-pointer"
                 >
                   <LogIn className="w-3.5 h-3.5 text-amber-300" />
                   <span>Login Admin</span>
+                </button>
+                <button
+                  onClick={onLogout}
+                  title="Kembali ke halaman awal login"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Keluar</span>
                 </button>
               </div>
             )}

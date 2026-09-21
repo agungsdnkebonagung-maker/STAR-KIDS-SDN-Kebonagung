@@ -12,7 +12,8 @@ import {
   MasterReward,
   SystemSettings,
   AuditLog,
-  AttendanceStatus
+  AttendanceStatus,
+  Pegawai
 } from './types';
 import { 
   INITIAL_STUDENTS, 
@@ -24,8 +25,10 @@ import {
   MASTER_PELANGGARAN,
   MASTER_REWARDS,
   DEFAULT_SYSTEM_SETTINGS,
+  DEFAULT_SCHOOL_PROFILE,
   INITIAL_AUDIT_LOGS
 } from './data/initialData';
+import { INITIAL_PEGAWAI } from './data/initialPegawai';
 import { Header, AppTab } from './components/Header';
 import { Footer } from './components/Footer';
 import { LoginModal } from './components/LoginModal';
@@ -39,16 +42,25 @@ import { MonitoringView } from './components/MonitoringView';
 import { StatistikView } from './components/StatistikView';
 import { LaporanView } from './components/LaporanView';
 import { SiswaView } from './components/SiswaView';
+import { PegawaiView } from './components/PegawaiView';
 import { SyncExportView } from './components/SyncExportView';
 import { AuditLogView } from './components/AuditLogView';
 import { PengaturanView } from './components/PengaturanView';
 import { OfficialPrintModal } from './components/OfficialPrintModal';
+import { WebProfilView } from './components/WebProfilView';
+import { SimpleLoginView } from './components/SimpleLoginView';
+import { CheckCircle2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   // Authentication Role State
   const [role, setRole] = useState<UserRole>(() => {
     const saved = localStorage.getItem('starkids_role');
     return (saved === 'admin' || saved === 'view_only') ? saved : 'view_only';
+  });
+
+  // User Session State: Simple login screen active by default unless logged in
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('starkids_is_logged_in') === 'true';
   });
 
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
@@ -120,9 +132,22 @@ export const App: React.FC = () => {
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem('starkids_system_settings');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...DEFAULT_SYSTEM_SETTINGS,
+          ...parsed,
+          schoolProfile: {
+            ...DEFAULT_SCHOOL_PROFILE,
+            ...(parsed.schoolProfile || {})
+          }
+        };
+      } catch (e) { /* ignore */ }
     }
-    return DEFAULT_SYSTEM_SETTINGS;
+    return {
+      ...DEFAULT_SYSTEM_SETTINGS,
+      schoolProfile: DEFAULT_SCHOOL_PROFILE
+    };
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
@@ -140,6 +165,35 @@ export const App: React.FC = () => {
     }
     return DEFAULT_SYNC_CONFIG;
   });
+
+  const [pegawaiList, setPegawaiList] = useState<Pegawai[]>(() => {
+    const saved = localStorage.getItem('starkids_pegawai');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) { /* ignore */ }
+    }
+    return INITIAL_PEGAWAI;
+  });
+
+  // Dynamic Kepala Sekolah memo for signatures and official documents
+  const kepalaSekolah = useMemo(() => {
+    // If school profile explicitly provides kepalaSekolahNama, use it
+    if (systemSettings.schoolProfile?.kepalaSekolahNama) {
+      return {
+        namaLengkap: systemSettings.schoolProfile.kepalaSekolahNama,
+        nip: systemSettings.schoolProfile.kepalaSekolahNip || '19710314 199605 2 001'
+      };
+    }
+    const ks = pegawaiList.find(p => p.kategori === 'kepala_sekolah' && p.statusAktif);
+    return ks || {
+      namaLengkap: 'Hj. Sukesi, M.Pd.',
+      nip: '19710314 199605 2 001'
+    };
+  }, [pegawaiList, systemSettings.schoolProfile]);
 
   // Print Modal State
   const [printModalOpen, setPrintModalOpen] = useState(false);
@@ -159,6 +213,7 @@ export const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('starkids_system_settings', JSON.stringify(systemSettings)); }, [systemSettings]);
   useEffect(() => { localStorage.setItem('starkids_audit_logs', JSON.stringify(auditLogs)); }, [auditLogs]);
   useEffect(() => { localStorage.setItem('starkids_sync_config', JSON.stringify(syncConfig)); }, [syncConfig]);
+  useEffect(() => { localStorage.setItem('starkids_pegawai', JSON.stringify(pegawaiList)); }, [pegawaiList]);
 
   // Helper for adding Audit Log
   const addAuditLog = useCallback((action: string, details: string) => {
@@ -175,6 +230,66 @@ export const App: React.FC = () => {
     };
     setAuditLogs(prev => [newLog, ...prev]);
   }, [role]);
+
+  // Refresh & Update state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshToastMessage, setRefreshToastMessage] = useState<string | null>(null);
+  const [lastUpdatedTime, setLastUpdatedTime] = useState<string>(() => {
+    return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()) + ' WIB';
+  });
+
+  const handleRefreshData = useCallback(() => {
+    setIsRefreshing(true);
+    try {
+      const savedStudents = localStorage.getItem('starkids_students');
+      if (savedStudents) {
+        try {
+          const parsed = JSON.parse(savedStudents);
+          if (Array.isArray(parsed) && parsed.length > 0) setStudents(parsed);
+        } catch (e) {}
+      }
+      const savedPelanggaran = localStorage.getItem('starkids_pelanggaran');
+      if (savedPelanggaran) {
+        try {
+          const parsed = JSON.parse(savedPelanggaran);
+          if (Array.isArray(parsed)) setPelanggaranList(parsed);
+        } catch (e) {}
+      }
+      const savedReward = localStorage.getItem('starkids_reward');
+      if (savedReward) {
+        try {
+          const parsed = JSON.parse(savedReward);
+          if (Array.isArray(parsed)) setRewardList(parsed);
+        } catch (e) {}
+      }
+      const savedAtt = localStorage.getItem('starkids_attendance');
+      if (savedAtt) {
+        try {
+          const parsed = JSON.parse(savedAtt);
+          if (Array.isArray(parsed)) setAttendanceList(parsed);
+        } catch (e) {}
+      }
+      const savedSettings = localStorage.getItem('starkids_system_settings');
+      if (savedSettings) {
+        try {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed && typeof parsed === 'object') setSystemSettings(parsed);
+        } catch (e) {}
+      }
+
+      const nowStr = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()) + ' WIB';
+      setLastUpdatedTime(nowStr);
+      setRefreshToastMessage(`Data sistem berhasil dimuat ulang & diperbarui (${nowStr})`);
+      setTimeout(() => {
+        setRefreshToastMessage(null);
+      }, 3500);
+      addAuditLog('Refresh Data', 'Pembaruan dan sinkronisasi data sistem');
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 400);
+    }
+  }, [addAuditLog]);
 
   // Recalculate Student totals automatically when violations or rewards change
   const refreshStudentStats = useCallback((
@@ -304,7 +419,44 @@ export const App: React.FC = () => {
 
   const handleUpdateStudent = (nisn: string, updated: Partial<Student>) => {
     setStudents(prev => prev.map(s => s.nisn === nisn ? { ...s, ...updated } : s));
-    addAuditLog('Update Siswa', `Memperbarui data biodata siswa NISN ${nisn}`);
+
+    // Cascading sync: If student name or class changed, synchronize to pelanggaran, reward, and attendance
+    if (updated.namaLengkap || updated.kelas) {
+      setPelanggaranList(prev => prev.map(p => {
+        if (p.nisn === nisn) {
+          return {
+            ...p,
+            namaSiswa: updated.namaLengkap || p.namaSiswa,
+            kelas: updated.kelas || p.kelas
+          };
+        }
+        return p;
+      }));
+
+      setRewardList(prev => prev.map(r => {
+        if (r.nisn === nisn) {
+          return {
+            ...r,
+            namaSiswa: updated.namaLengkap || r.namaSiswa,
+            kelas: updated.kelas || r.kelas
+          };
+        }
+        return r;
+      }));
+
+      setAttendanceList(prev => prev.map(a => {
+        if (a.nisn === nisn) {
+          return {
+            ...a,
+            nama: updated.namaLengkap || a.nama,
+            kelas: updated.kelas || a.kelas
+          };
+        }
+        return a;
+      }));
+    }
+
+    addAuditLog('Update Siswa', `Memperbarui data siswa NISN ${nisn} dan menyelaraskan ke seluruh riwayat sistem`);
   };
 
   const handleDeleteStudent = (nisn: string) => {
@@ -323,6 +475,203 @@ export const App: React.FC = () => {
       return [...filteredNew, ...prev];
     });
     addAuditLog('Import Siswa', `Mengimpor ${newStudents.length} data siswa dari spreadsheet`);
+  };
+
+  // Pegawai CRUD and Sync Handlers
+  const handleAddPegawai = (newPegawai: Pegawai) => {
+    setPegawaiList(prev => [newPegawai, ...prev]);
+    addAuditLog('Tambah Pegawai', `Menambahkan pegawai baru: ${newPegawai.namaLengkap} (${newPegawai.jabatan})`);
+  };
+
+  const handleBatchAddPegawai = (newPegawaiList: Pegawai[]) => {
+    setPegawaiList(newPegawaiList);
+    addAuditLog('Import Pegawai', `Memperbarui & mengimpor data kepegawaian (${newPegawaiList.length} pegawai)`);
+  };
+
+  const handleUpdatePegawai = (id: string, updated: Partial<Pegawai>) => {
+    setPegawaiList(prev => {
+      const nextList = prev.map(p => (p.id === id ? { ...p, ...updated } : p));
+      const target = nextList.find(p => p.id === id);
+
+      // Cascading sync: If Kepala Sekolah updated, sync to schoolProfile
+      if (target && target.kategori === 'kepala_sekolah') {
+        setSystemSettings(curr => {
+          const currentProfile = curr.schoolProfile || DEFAULT_SCHOOL_PROFILE;
+          return {
+            ...curr,
+            schoolProfile: {
+              ...currentProfile,
+              kepalaSekolahNama: target.namaLengkap,
+              kepalaSekolahNip: target.nip || currentProfile.kepalaSekolahNip
+            }
+          };
+        });
+      }
+
+      // Cascading sync: If Wali Kelas updated, sync to masterKelas, students, and attendance
+      if (target && target.kategori === 'wali_kelas' && target.kelasBinaan) {
+        const kb = target.kelasBinaan.toUpperCase();
+        setMasterKelas(currK => currK.map(k => {
+          if (k.kelas.toUpperCase() === kb) {
+            return {
+              ...k,
+              waliKelas: target.namaLengkap,
+              nipWaliKelas: target.nip || k.nipWaliKelas
+            };
+          }
+          return k;
+        }));
+
+        setStudents(currS => currS.map(s => {
+          if (s.kelas.toUpperCase() === kb) {
+            return {
+              ...s,
+              waliKelas: target.namaLengkap,
+              nipWaliKelas: target.nip || s.nipWaliKelas
+            };
+          }
+          return s;
+        }));
+
+        setAttendanceList(currA => currA.map(a => {
+          if (a.kelas.toUpperCase() === kb) {
+            return {
+              ...a,
+              waliKelas: target.namaLengkap
+            };
+          }
+          return a;
+        }));
+      }
+
+      return nextList;
+    });
+
+    addAuditLog('Update Pegawai', `Memperbarui data pegawai: ${updated.namaLengkap || id} dan menyelaraskan ke rombel & murid`);
+  };
+
+  const handleDeletePegawai = (id: string) => {
+    const target = pegawaiList.find(p => p.id === id);
+    setPegawaiList(prev => prev.filter(p => p.id !== id));
+    addAuditLog('Hapus Pegawai', `Menghapus data pegawai: ${target?.namaLengkap || id}`);
+  };
+
+  // Master Kelas & Settings Cascading Sync Handlers
+  const handleUpdateMasterKelas = (list: MasterKelas[]) => {
+    setMasterKelas(list);
+
+    // Cascading sync: Synchronize updated wali kelas and NIP into all students and attendance records
+    const mapWali: Record<string, { nama: string; nip?: string }> = {};
+    list.forEach(k => {
+      mapWali[k.kelas.toUpperCase()] = {
+        nama: k.waliKelas,
+        nip: k.nipWaliKelas
+      };
+    });
+
+    setStudents(prev => prev.map(s => {
+      const match = mapWali[s.kelas.toUpperCase()];
+      if (match) {
+        return {
+          ...s,
+          waliKelas: match.nama,
+          nipWaliKelas: match.nip || s.nipWaliKelas
+        };
+      }
+      return s;
+    }));
+
+    setAttendanceList(prev => prev.map(a => {
+      const match = mapWali[a.kelas.toUpperCase()];
+      if (match) {
+        return {
+          ...a,
+          waliKelas: match.nama
+        };
+      }
+      return a;
+    }));
+
+    addAuditLog('Pengaturan Rombel', `Memperbarui susunan ${list.length} rombel kelas dan menyinkronkan data wali kelas ke data murid`);
+  };
+
+  const handleUpdateSettings = (settings: SystemSettings) => {
+    setSystemSettings(settings);
+
+    // Cascading sync: If Kepala Sekolah updated in schoolProfile, synchronize with pegawaiList
+    const ksNama = settings.schoolProfile?.kepalaSekolahNama;
+    const ksNip = settings.schoolProfile?.kepalaSekolahNip;
+    if (ksNama) {
+      setPegawaiList(prev => prev.map(p => {
+        if (p.kategori === 'kepala_sekolah') {
+          return {
+            ...p,
+            namaLengkap: ksNama,
+            nip: ksNip || p.nip
+          };
+        }
+        return p;
+      }));
+    }
+
+    // Cascading sync: If tahunAjaran changed, synchronize into masterKelas
+    if (settings.tahunAjaran) {
+      setMasterKelas(prev => prev.map(k => ({
+        ...k,
+        tahunAjaran: settings.tahunAjaran
+      })));
+    }
+
+    addAuditLog('Pengaturan Sistem', `Memperbarui profil sekolah (NPSN: ${settings.schoolProfile?.npsn || '20535384'}), hotline, logo, dan konfigurasi sistem`);
+  };
+
+  const handleSyncWaliKelasToStudentsAndMaster = (pegawais: Pegawai[]) => {
+    const mapWali: Record<string, { nama: string; nip?: string }> = {};
+    pegawais.forEach(p => {
+      if (p.kategori === 'wali_kelas' && p.kelasBinaan) {
+        mapWali[p.kelasBinaan.toUpperCase()] = {
+          nama: p.namaLengkap,
+          nip: p.nip
+        };
+      }
+    });
+
+    setMasterKelas(prev => prev.map(k => {
+      const match = mapWali[k.kelas.toUpperCase()];
+      if (match) {
+        return {
+          ...k,
+          waliKelas: match.nama,
+          nipWaliKelas: match.nip || k.nipWaliKelas
+        };
+      }
+      return k;
+    }));
+
+    setStudents(prev => prev.map(s => {
+      const match = mapWali[s.kelas.toUpperCase()];
+      if (match) {
+        return {
+          ...s,
+          waliKelas: match.nama,
+          nipWaliKelas: match.nip || s.nipWaliKelas
+        };
+      }
+      return s;
+    }));
+
+    setAttendanceList(prev => prev.map(a => {
+      const match = mapWali[a.kelas.toUpperCase()];
+      if (match) {
+        return {
+          ...a,
+          waliKelas: match.nama
+        };
+      }
+      return a;
+    }));
+
+    addAuditLog('Sinkronisasi Wali Kelas', 'Menyelaraskan nama dan NIP wali kelas ke 28 rombel dan seluruh murid');
   };
 
   // Manual Trigger Sync
@@ -362,6 +711,34 @@ export const App: React.FC = () => {
     setActiveTab('profil');
   };
 
+  // Logout handler returning user to the simple login screen
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('starkids_is_logged_in');
+    setRole('view_only');
+    setActiveTab('dashboard');
+    addAuditLog('Logout Pengguna', 'Pengguna keluar dari sesi aplikasi ke menu login');
+  };
+
+  // Sederhana: Tampilan Awal hanya form Login jika belum login
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col justify-between font-sans">
+        <SimpleLoginView
+          schoolProfile={systemSettings.schoolProfile}
+          expectedPassword={systemSettings.adminPassword}
+          onLogin={(newRole) => {
+            setRole(newRole);
+            setIsLoggedIn(true);
+            localStorage.setItem('starkids_is_logged_in', 'true');
+            addAuditLog('Login Pengguna', `Pengguna masuk ke sistem sebagai ${newRole === 'admin' ? 'Administrator' : 'Orang Tua / Wali'}`);
+          }}
+        />
+        <Footer schoolProfile={systemSettings.schoolProfile} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50/50 via-white to-amber-50/20 text-slate-800 selection:bg-amber-400 selection:text-slate-900 font-sans antialiased relative overflow-x-hidden">
       {/* Joyful Ambient Lighting Decor */}
@@ -382,10 +759,11 @@ export const App: React.FC = () => {
         }}
         role={role}
         onOpenLogin={() => setIsLoginModalOpen(true)}
-        onLogout={() => {
-          setRole('view_only');
-          setActiveTab('dashboard');
-        }}
+        onLogout={handleLogout}
+        schoolProfile={systemSettings.schoolProfile}
+        tahunAjaran={systemSettings.tahunAjaran}
+        onRefreshData={handleRefreshData}
+        isRefreshing={isRefreshing}
       />
 
       {/* Main Content Area */}
@@ -407,6 +785,11 @@ export const App: React.FC = () => {
               setActiveTab(tab);
             }}
             onSelectStudent={handleNavigateToStudentProfile}
+            masterKelas={masterKelas}
+            schoolProfile={systemSettings.schoolProfile}
+            onRefreshData={handleRefreshData}
+            isRefreshing={isRefreshing}
+            lastUpdatedTime={lastUpdatedTime}
           />
         )}
 
@@ -548,7 +931,22 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* VIEW 12: AUDIT LOG (Hanya Admin) */}
+        {/* VIEW 12: DATA PEGAWAI & GURU (SIM-PEG KEBONAGUNG) */}
+        {activeTab === 'pegawai' && (
+          <PegawaiView
+            pegawaiList={pegawaiList}
+            role={role}
+            masterKelas={masterKelas}
+            students={students}
+            onAddPegawai={handleAddPegawai}
+            onBatchAddPegawai={handleBatchAddPegawai}
+            onUpdatePegawai={handleUpdatePegawai}
+            onDeletePegawai={handleDeletePegawai}
+            onSyncWaliKelasToStudentsAndMaster={handleSyncWaliKelasToStudentsAndMaster}
+          />
+        )}
+
+        {/* VIEW 13: AUDIT LOG (Hanya Admin) */}
         {activeTab === 'audit' && role === 'admin' && (
           <AuditLogView
             logs={auditLogs}
@@ -556,7 +954,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* VIEW 13: PENGATURAN (Hanya Admin) */}
+        {/* VIEW 14: PENGATURAN (Hanya Admin) */}
         {activeTab === 'pengaturan' && role === 'admin' && (
           <PengaturanView
             masterKelas={masterKelas}
@@ -564,10 +962,7 @@ export const App: React.FC = () => {
             masterReward={masterReward}
             systemSettings={systemSettings}
             role={role}
-            onUpdateKelas={(list) => {
-              setMasterKelas(list);
-              addAuditLog('Pengaturan Rombel', `Memperbarui susunan ${list.length} rombel kelas`);
-            }}
+            onUpdateKelas={handleUpdateMasterKelas}
             onUpdatePelanggaran={(list) => {
               setMasterPelanggaran(list);
               addAuditLog('Pengaturan Master Pelanggaran', `Memperbarui daftar master pelanggaran (${list.length} item)`);
@@ -576,22 +971,46 @@ export const App: React.FC = () => {
               setMasterReward(list);
               addAuditLog('Pengaturan Master Reward', `Memperbarui daftar master reward (${list.length} item)`);
             }}
-            onUpdateSettings={(settings) => {
-              setSystemSettings(settings);
-              addAuditLog('Pengaturan Sistem', 'Memperbarui ambang batas monitoring dan tahun ajaran');
-            }}
+            onUpdateSettings={handleUpdateSettings}
             onChangePasswordAdmin={(newPw) => {
               setSystemSettings(prev => ({ ...prev, adminPassword: newPw }));
               addAuditLog('Keamanan Akun', 'Administrator mengubah kata sandi akses sistem');
               return true;
             }}
+            onNavigateToPegawai={() => setActiveTab('pegawai')}
           />
         )}
 
+        {/* VIEW 15: WEB PROFIL SEKOLAH PUBLIK (COMPANY PROFILE) */}
+        {activeTab === 'webprofil' && (
+           <WebProfilView
+             onNavigateToPortal={(tab) => setActiveTab(tab || 'dashboard')}
+             kepalaSekolahName={kepalaSekolah.namaLengkap}
+             kepalaSekolahNip={kepalaSekolah.nip}
+             totalSiswa={students.length}
+             totalRombel={masterKelas.length}
+             totalPegawai={pegawaiList.length}
+             schoolProfile={systemSettings.schoolProfile}
+           />
+         )}
+
       </main>
 
+      {/* Real-time Refresh Toast Notification */}
+      {refreshToastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-100">{refreshToastMessage}</p>
+            <p className="text-[10px] text-slate-400">Sinkronisasi data sistem selesai</p>
+          </div>
+        </div>
+      )}
+
       {/* Official Footer with required copyright & philosophy */}
-      <Footer />
+      <Footer schoolProfile={systemSettings.schoolProfile} />
 
       {/* Modal Dialogs */}
       <LoginModal
@@ -599,6 +1018,7 @@ export const App: React.FC = () => {
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={(newRole: UserRole) => setRole(newRole)}
         expectedPassword={systemSettings.adminPassword}
+        schoolProfile={systemSettings.schoolProfile}
       />
 
       <OfficialPrintModal
@@ -607,6 +1027,9 @@ export const App: React.FC = () => {
         student={printStudent}
         pelanggaran={printPelanggaran}
         mode={printMode}
+        kepalaSekolahName={kepalaSekolah.namaLengkap}
+        kepalaSekolahNip={kepalaSekolah.nip}
+        schoolProfile={systemSettings.schoolProfile}
       />
 
     </div>

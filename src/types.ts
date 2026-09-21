@@ -126,6 +126,32 @@ export interface MasterKelas {
   kapasitasSiswa?: number;
 }
 
+export interface SchoolProfileData {
+  namaSekolah: string;
+  namaSingkat: string;
+  npsn: string;
+  nss?: string;
+  statusSekolah: 'Negeri' | 'Swasta' | string;
+  akreditasi: string;
+  tagline: string;
+  alamatJalan: string;
+  kelurahan: string;
+  kecamatan: string;
+  kota: string;
+  provinsi: string;
+  kodePos: string;
+  teleponKantor: string;
+  noTeleponPengaduan: string; // Nomor Telp / WA Pengaduan Masyarakat
+  hotlineTppk: string; // Hotline Pengaduan Resmi Satgas TPPK
+  email: string;
+  website: string;
+  jamLayananPengaduan: string;
+  penanggungJawabPengaduan: string;
+  kepalaSekolahNama: string;
+  kepalaSekolahNip: string;
+  logoUrl?: string; // Data URL Base64 or Image URL
+}
+
 export interface SystemSettings {
   alpaPerhatian: number; // default 3
   alpaRisiko: number; // default 5
@@ -136,6 +162,7 @@ export interface SystemSettings {
   adminPassword: string;
   konversiNilaiAktif?: boolean;
   maxPoinBonusNilai?: number;
+  schoolProfile?: SchoolProfileData;
 }
 
 export interface AuditLog {
@@ -154,5 +181,35 @@ export interface CanvaSyncConfig {
   status: 'idle' | 'syncing' | 'success' | 'error';
   lastMessage?: string;
   totalSyncedCount: number;
+}
+
+export type KategoriPegawai = 
+  | 'kepala_sekolah' 
+  | 'wali_kelas' 
+  | 'guru_mapel' 
+  | 'administrasi' 
+  | 'staff_sekolah';
+
+export type StatusKepegawaian = 'PNS' | 'PPPK' | 'GTT' | 'PTT' | 'Tenaga Kontrak' | 'Honor Sekolah';
+
+export interface Pegawai {
+  id: string;
+  nip?: string;
+  namaLengkap: string;
+  jenisKelamin: Gender;
+  kategori: KategoriPegawai;
+  jabatan: string;
+  tugasTambahan?: string;
+  kelasBinaan?: string;
+  mataPelajaran?: string;
+  statusKepegawaian: StatusKepegawaian;
+  golonganRuang?: string;
+  pendidikanTerakhir?: string;
+  noHp: string;
+  email?: string;
+  alamat?: string;
+  statusAktif: boolean;
+  fotoUrl?: string;
+  catatan?: string;
 }
 

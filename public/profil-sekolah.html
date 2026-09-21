@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDN Kebonagung Kota Pasuruan - Berkarakter, Cerdas & Ramah Anak</title>
+  <meta name="description" content="Website Resmi UPT Satuan Pendidikan SDN Kebonagung Kota Pasuruan. Sekolah Ramah Anak, Adiwiyata, dan Berkarakter Juara dengan Sistem Terintegrasi STAR-KIDS." />
+  <meta name="keywords" content="SDN Kebonagung, SD Negeri Kebonagung Pasuruan, Sekolah Dasar Kota Pasuruan, STAR-KIDS, TPPK, Pendidikan Pasuruan" />
+  
+  <!-- Open Graph / Meta Sosial -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SDN Kebonagung Kota Pasuruan - Website Resmi Profil Sekolah" />
+  <meta property="og:description" content="Mewujudkan generasi berakhlak mulia, cerdas, berprestasi, peduli lingkungan, dan berkarakter juara di Kota Pasuruan." />
+  
+  <!-- Favicon / Ikon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+              950: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons via unpkg -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom utility animations and styles */
+    .hero-pattern {
+      background-color: #0f172a;
+      background-image: radial-gradient(rgba(59, 130, 246, 0.25) 1px, transparent 1px), radial-gradient(rgba(14, 165, 233, 0.2) 1px, #0b1329 1px);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+    }
+    .text-balance {
+      text-wrap: balance;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.92; transform: scale(1.02); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 4s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans selection:bg-blue-600 selection:text-white">
+
+  <!-- ================= TOP NOTIFICATION BAR ================= -->
+  <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white text-xs py-2 px-4 border-b border-blue-800/60 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 uppercase tracking-wider">
+          <i data-lucide="sparkles" class="w-3 h-3 text-amber-900"></i>
+          Portal Terpadu
+        </span>
+        <span class="hidden sm:inline text-blue-200">|</span>
+        <p class="text-[11px] sm:text-xs text-blue-100 font-medium">
+          Dinas Pendidikan dan Kebudayaan Pemerintah Kota Pasuruan &bull; NPSN: <strong class="text-white">20535384</strong>
+        </p>
+      </div>
+
+      <div class="flex items-center gap-4 text-[11px] text-blue-200">
+        <div class="hidden md:flex items-center gap-2">
+          <i data-lucide="phone" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>(0343) 421890</span>
+        </div>
+        <div class="hidden md:flex items-center gap-2">
+          <i data-lucide="mail" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>sdnkebonagung@pasuruankota.go.id</span>
+        </div>
+        <a href="/" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold rounded-lg text-[10px] uppercase tracking-wide transition shadow-sm">
+          <i data-lucide="shield-check" class="w-3 h-3"></i>
+          <span>Masuk STAR-KIDS</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN HEADER & NAVBAR ================= -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-[37px] z-40 transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <!-- Logo & School Brand -->
+        <a href="#beranda" class="flex items-center gap-3.5 group">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-700 to-sky-500 p-0.5 shadow-md group-hover:scale-105 transition-transform flex items-center justify-center text-white">
+            <div class="w-full h-full bg-blue-900 rounded-[14px] flex items-center justify-center">
+              <i data-lucide="graduation-cap" class="w-6 h-6 text-amber-300"></i>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold tracking-widest text-blue-700 uppercase">UPT Satuan Pendidikan</span>
+              <span class="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded">AKREDITASI A</span>
+            </div>
+            <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-none group-hover:text-blue-700 transition">
+              SDN KEBONAGUNG
+            </h1>
+            <p class="text-[11px] text-slate-500 font-medium">Kota Pasuruan &bull; Jawa Timur</p>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Menu -->
+        <nav class="hidden lg:flex items-center gap-1 xl:gap-2">
+          <a href="#beranda" class="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition">Beranda</a>
+          <a href="#profil" class="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition">Profil Sekolah</a>
+          <a href="#sambutan" class="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition">Sambutan KS</a>
+          <a href="#akademik" class="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition">Akademik & Rombel</a>
+          <a href="#fasilitas" class="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition">Fasilitas</a>
+          <a href="#berita" class="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition">Berita & Agenda</a>
+          <a href="#kontak" class="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition">Kontak</a>
+        </nav>
+
+        <!-- Right Action Buttons -->
+        <div class="hidden sm:flex items-center gap-3">
+          <a href="/" target="_self" class="relative group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-extrabold text-xs text-white bg-gradient-to-r from-blue-700 via-indigo-600 to-sky-600 hover:from-blue-800 hover:to-sky-700 shadow-md hover:shadow-lg transition-all active:scale-95">
+            <span class="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-400 text-[8px] font-black text-slate-900 items-center justify-center">★</span>
+            </span>
+            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-300"></i>
+            <span>PORTAL STAR-KIDS</span>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Hamburger Button -->
+        <button id="mobileMenuBtn" type="button" class="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 focus:outline-none" aria-label="Buka Menu Navigasi">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobileMenu" class="hidden lg:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-5 space-y-2 shadow-xl">
+      <a href="#beranda" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700">Beranda</a>
+      <a href="#profil" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700">Profil & Visi Misi</a>
+      <a href="#sambutan" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700">Sambutan Kepala Sekolah</a>
+      <a href="#akademik" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700">Akademik & 28 Rombel</a>
+      <a href="#fasilitas" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700">Fasilitas Sekolah</a>
+      <a href="#berita" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700">Berita & Informasi</a>
+      <a href="#kontak" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-700">Kontak & Lokasi</a>
+      <div class="pt-2 border-t border-slate-100">
+        <a href="/" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow-md">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-amber-300"></i>
+          <span>Buka Aplikasi Portal STAR-KIDS (SIM Sekolah)</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= HERO SECTION / BANNER SLIDER ================= -->
+  <section id="beranda" class="relative hero-pattern text-white overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28">
+    <!-- Ambient Glow effects -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        
+        <!-- Left Hero Text -->
+        <div class="lg:col-span-7 space-y-6 text-left">
+          
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/30 text-blue-300 text-xs font-semibold backdrop-blur-md">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Selamat Datang di Website Resmi UPT Satuan Pendidikan</span>
+          </div>
+
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.15] text-balance">
+            Mewujudkan Generasi <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-sky-300 to-blue-200">Cerdas, Berkarakter & Peduli Lingkungan</span>
+          </h2>
+
+          <p class="text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-2xl">
+            UPT Satuan Pendidikan <strong>SDN Kebonagung Kota Pasuruan</strong> mendidik dengan cinta kasih, berlandaskan iman, integritas Kurikulum Merdeka, serta pembiasaan karakter unggul melalui sistem monitoring perilaku ramah anak <em>STAR-KIDS</em>.
+          </p>
+
+          <!-- Badges Pill Row -->
+          <div class="flex flex-wrap gap-2.5 pt-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/15 rounded-lg text-xs font-semibold text-slate-200">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i> Akreditasi A (Unggul)
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/15 rounded-lg text-xs font-semibold text-slate-200">
+              <i data-lucide="leaf" class="w-3.5 h-3.5 text-emerald-400"></i> Sekolah Adiwiyata
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/15 rounded-lg text-xs font-semibold text-slate-200">
+              <i data-lucide="heart-handshake" class="w-3.5 h-3.5 text-rose-400"></i> Sekolah Ramah Anak
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/15 rounded-lg text-xs font-semibold text-slate-200">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-sky-400"></i> 28 Rombel Aktif
+            </span>
+          </div>
+
+          <!-- Hero Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-4">
+            <a href="/" class="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm shadow-lg hover:shadow-amber-400/20 transition active:scale-95">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>PORTAL APLIKASI STAR-KIDS</span>
+            </a>
+            <a href="#profil" class="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-sm backdrop-blur-md transition">
+              <i data-lucide="book-open" class="w-4 h-4 text-blue-300"></i>
+              <span>Profil Lengkap Sekolah</span>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- Right Hero Visual Card -->
+        <div class="lg:col-span-5">
+          <div class="relative mx-auto max-w-md">
+            
+            <!-- Glow backdrop -->
+            <div class="absolute inset-0 bg-gradient-to-tr from-blue-600 to-amber-400 rounded-3xl blur-2xl opacity-20 transform rotate-3"></div>
+
+            <div class="relative bg-slate-900/80 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl space-y-5">
+              
+              <!-- Card Header -->
+              <div class="flex items-center justify-between pb-4 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-400/30 flex items-center justify-center text-amber-300">
+                    <i data-lucide="school" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-white">Identitas Sekolah</h3>
+                    <p class="text-[11px] text-blue-300">Kota Pasuruan, Jawa Timur</p>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black">
+                  AKTIF BERMUTU
+                </span>
+              </div>
+
+              <!-- Metrics Quick Grid -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 text-center">
+                  <span class="block text-2xl font-black text-amber-400">840+</span>
+                  <span class="text-xs text-slate-300 font-medium">Siswa & Siswi</span>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 text-center">
+                  <span class="block text-2xl font-black text-sky-400">28</span>
+                  <span class="text-xs text-slate-300 font-medium">Rombongan Belajar</span>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 text-center">
+                  <span class="block text-2xl font-black text-emerald-400">48</span>
+                  <span class="text-xs text-slate-300 font-medium">Guru & Tenaga Staf</span>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-3.5 text-center">
+                  <span class="block text-2xl font-black text-rose-400">100%</span>
+                  <span class="text-xs text-slate-300 font-medium">Lulusan Melanjutkan</span>
+                </div>
+              </div>
+
+              <!-- STAR-KIDS Integration Feature Callout -->
+              <div class="bg-gradient-to-r from-blue-950 to-indigo-950 border border-blue-500/40 rounded-2xl p-4 flex items-center gap-3">
+                <div class="p-2.5 bg-blue-600 rounded-xl text-white shrink-0">
+                  <i data-lucide="award" class="w-5 h-5 text-amber-300"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-black text-white">Sistem STAR-KIDS Pasuruan</h4>
+                  <p class="text-[11px] text-blue-200 leading-tight mt-0.5">
+                    Monitoring absensi digital harian, rekaman reward karakter juara, dan pencegahan kekerasan TPPK.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Address summary -->
+              <div class="text-[11px] text-slate-400 flex items-center gap-2 pt-1">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400 shrink-0"></i>
+                <span>Jl. Raya Kebonagung No. 12, Kec. Purworejo, Kota Pasuruan</span>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= QUICK HIGHLIGHT STATS BAR ================= -->
+  <section class="bg-white border-y border-slate-200 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div class="border-r last:border-r-0 border-slate-100 pr-4">
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kurikulum</p>
+          <p class="text-lg sm:text-xl font-black text-blue-800 mt-1">Kurikulum Merdeka</p>
+          <p class="text-[11px] text-slate-400">Fase A, B, dan C (Kelas 1 - 6)</p>
+        </div>
+        <div class="border-r last:border-r-0 border-slate-100 pr-4">
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Status Akreditasi</p>
+          <p class="text-lg sm:text-xl font-black text-emerald-600 mt-1">Grade A (Unggul)</p>
+          <p class="text-[11px] text-slate-400">BAN-S/M Jawa Timur</p>
+        </div>
+        <div class="border-r last:border-r-0 border-slate-100 pr-4">
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Satuan Pendidikan</p>
+          <p class="text-lg sm:text-xl font-black text-slate-900 mt-1">Negeri (Pemerintah)</p>
+          <p class="text-[11px] text-slate-400">Disdikbud Kota Pasuruan</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Keamanan & Ramah Anak</p>
+          <p class="text-lg sm:text-xl font-black text-amber-600 mt-1">Satgas TPPK Aktif</p>
+          <p class="text-[11px] text-slate-400">Zero Bullying & Kekerasan</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SAMBUTAN KEPALA SEKOLAH ================= -->
+  <section id="sambutan" class="py-16 sm:py-24 bg-slate-50 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 shadow-sm overflow-hidden relative">
+        <!-- Background quote icon decoration -->
+        <i data-lucide="quote" class="absolute -bottom-6 -right-6 w-48 h-48 text-slate-100 pointer-events-none"></i>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          
+          <!-- Foto / Avatar Profil Kepala Sekolah -->
+          <div class="lg:col-span-4 flex flex-col items-center text-center">
+            <div class="relative w-48 h-48 sm:w-56 sm:h-56 rounded-3xl overflow-hidden p-2 bg-gradient-to-tr from-blue-700 via-indigo-600 to-amber-400 shadow-xl mb-4">
+              <div class="w-full h-full bg-slate-100 rounded-[20px] overflow-hidden flex items-center justify-center relative">
+                <!-- Kepala Sekolah Portrait Placeholder with Professional Styling -->
+                <div class="w-full h-full bg-gradient-to-b from-blue-900 to-slate-900 flex flex-col items-center justify-center text-white p-4">
+                  <div class="w-20 h-20 rounded-full bg-amber-400/20 border-2 border-amber-300 flex items-center justify-center text-amber-300 mb-2">
+                    <i data-lucide="user-check" class="w-10 h-10"></i>
+                  </div>
+                  <span class="text-xs font-bold uppercase tracking-widest text-amber-300">Kepala Sekolah</span>
+                  <span class="text-sm font-black text-center mt-1">Hj. Sukesi, M.Pd.</span>
+                </div>
+              </div>
+            </div>
+            
+            <h3 class="text-lg font-black text-slate-900">Hj. Sukesi, M.Pd.</h3>
+            <p class="text-xs font-semibold text-blue-700">Kepala UPT SDN Kebonagung</p>
+            <p class="text-[11px] text-slate-500 font-mono mt-0.5">NIP. 19710314 199605 2 001</p>
+
+            <div class="mt-4 flex items-center gap-2">
+              <span class="px-2.5 py-1 bg-blue-50 text-blue-800 text-[10px] font-bold rounded-lg border border-blue-100">
+                Masa Bakti Aktif 2026/2027
+              </span>
+            </div>
+          </div>
+
+          <!-- Teks Sambutan Resmi -->
+          <div class="lg:col-span-8 space-y-4 text-slate-700 text-left">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+              <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+              Sambutan Resmi Kepala Sekolah
+            </div>
+
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
+              Mendidik dengan Keteladanan, Merawat Potensi Setiap Anak Bangsa
+            </h3>
+
+            <p class="text-sm sm:text-base leading-relaxed text-slate-600">
+              <em>Assalamu’alaikum Warahmatullahi Wabarakatuh, Salam Sejahtera, Om Swastiastu, Namo Buddhaya, Salam Kebajikan.</em>
+            </p>
+
+            <p class="text-sm leading-relaxed">
+              Puji syukur kita panjatkan ke hadirat Tuhan Yang Maha Esa atas limpahan rahmat dan karunia-Nya. Selamat datang di portal resmi <strong>UPT Satuan Pendidikan SDN Kebonagung Kota Pasuruan</strong>. Website ini hadir sebagai wujud transparansi, keterbukaan informasi publik, serta sarana komunikasi edukatif antara pihak sekolah, orang tua wali murid, dan seluruh masyarakat.
+            </p>
+
+            <p class="text-sm leading-relaxed">
+              Di SDN Kebonagung, kami berkomitmen tidak hanya mencetak peserta didik yang berprestasi dalam bidang akademik, namun juga membangun budi pekerti luhur, berwawasan lingkungan hidup (Adiwiyata), serta menciptakan iklim belajar yang <strong>Ramah Anak</strong> dan bebas dari segala bentuk perundungan.
+            </p>
+
+            <p class="text-sm leading-relaxed">
+              Melalui transformasi digitalisasi pendidikan—termasuk implementasi aplikasi <strong>STAR-KIDS</strong>—kami memastikan setiap jejak perkembangan kehadiran dan prestasi karakter peserta didik di 28 rombongan belajar dapat dipantau secara transparan dan berkeadilan. Mari bersama-sama kita antarkan putra-putri kita menjadi generasi Indonesia Emas yang unggul dan membanggakan.
+            </p>
+
+            <div class="pt-4 flex items-center justify-between border-t border-slate-100">
+              <p class="text-xs font-semibold text-slate-500 italic">
+                "Sekolah Hebat, Guru Bersahabat, Murid Berakhlak & Berkarakter Juara."
+              </p>
+              <div class="text-right">
+                <span class="text-xs font-bold text-blue-900">Kota Pasuruan</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= PROFIL, VISI & MISI SEKOLAH ================= -->
+  <section id="profil" class="py-16 sm:py-24 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Section Header -->
+      <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold">
+          <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+          Arah Langkah Pendidikan
+        </div>
+        <h3 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          Visi, Misi & Nilai Karakter Juara
+        </h3>
+        <p class="text-slate-600 text-sm sm:text-base">
+          Pedoman dasar seluruh kegiatan belajar mengajar dan pembiasaan di lingkungan UPT SDN Kebonagung.
+        </p>
+      </div>
+
+      <!-- Visi & Misi Bento Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Visi Card -->
+        <div class="lg:col-span-5 bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-8 text-white shadow-md flex flex-col justify-between">
+          <div class="space-y-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-slate-950 text-xs font-black rounded-lg">
+              <i data-lucide="target" class="w-3.5 h-3.5"></i> VISI UTAMA SEKOLAH
+            </div>
+            <h4 class="text-xl sm:text-2xl font-black text-amber-300 leading-snug">
+              "Terwujudnya Peserta Didik yang Beriman, Cerdas, Berkarakter, Unggul dalam Prestasi, Berbudaya Lingkungan, dan Ramah Anak."
+            </h4>
+            <p class="text-xs text-blue-200 leading-relaxed">
+              Visi ini mencerminkan komitmen bulat seluruh warga sekolah dalam membentuk profil Pelajar Pancasila yang tangguh menghadapi tantangan masa depan tanpa melupakan akar budaya dan norma kesantunan.
+            </p>
+          </div>
+
+          <div class="pt-6 border-t border-white/15 mt-6">
+            <h5 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3">Tiga Pilar Utama:</h5>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-white/10 rounded-xl p-2.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-300 mx-auto mb-1"></i>
+                <span class="text-[11px] font-bold">Karakter</span>
+              </div>
+              <div class="bg-white/10 rounded-xl p-2.5">
+                <i data-lucide="trophy" class="w-4 h-4 text-amber-300 mx-auto mb-1"></i>
+                <span class="text-[11px] font-bold">Prestasi</span>
+              </div>
+              <div class="bg-white/10 rounded-xl p-2.5">
+                <i data-lucide="trees" class="w-4 h-4 text-sky-300 mx-auto mb-1"></i>
+                <span class="text-[11px] font-bold">Adiwiyata</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Misi Card -->
+        <div class="lg:col-span-7 bg-slate-50 border border-slate-200/80 rounded-3xl p-8 shadow-xs space-y-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-black rounded-lg">
+            <i data-lucide="list-checks" class="w-3.5 h-3.5"></i> MISI PENDIDIKAN SEKOLAH
+          </div>
+          
+          <div class="space-y-3.5">
+            <div class="flex items-start gap-3.5 p-3 rounded-2xl bg-white border border-slate-200/60 shadow-xs">
+              <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <div>
+                <h5 class="text-sm font-bold text-slate-900">Pembinaan Akhlak & Ketakwaan</h5>
+                <p class="text-xs text-slate-600 mt-0.5">Menumbuhkan penghayatan dan pengamalan ajaran agama melalui ibadah harian, doa bersama, dan kegiatan keagamaan toleran.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3.5 p-3 rounded-2xl bg-white border border-slate-200/60 shadow-xs">
+              <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <div>
+                <h5 class="text-sm font-bold text-slate-900">Pembelajaran Interaktif & Mutu Kurikulum Merdeka</h5>
+                <p class="text-xs text-slate-600 mt-0.5">Menyelenggarakan proses pembelajaran yang kreatif, inovatif, berbasis literasi-numerasi dan pemanfaatan teknologi digital.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3.5 p-3 rounded-2xl bg-white border border-slate-200/60 shadow-xs">
+              <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <div>
+                <h5 class="text-sm font-bold text-slate-900">Budaya Peduli Lingkungan Hidup (Adiwiyata)</h5>
+                <p class="text-xs text-slate-600 mt-0.5">Membiasakan budaya bersih, pemilahan sampah organik-anorganik, konservasi air, dan penghijauan kawasan sekolah.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3.5 p-3 rounded-2xl bg-white border border-slate-200/60 shadow-xs">
+              <span class="w-7 h-7 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5">4</span>
+              <div>
+                <h5 class="text-sm font-bold text-slate-900">Mewujudkan Sekolah Ramah Anak & TPPK Tanggap</h5>
+                <p class="text-xs text-slate-600 mt-0.5">Menjamin lingkungan belajar yang aman, nyaman, menyenangkan, serta bebas dari perundungan (bullying) dan kekerasan fisik/verbal.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Nilai STAR-KIDS Infographic Strip -->
+      <div class="mt-12 bg-gradient-to-r from-amber-50 via-blue-50 to-indigo-50 border border-blue-200/70 rounded-3xl p-6 sm:p-8">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="max-w-md space-y-1">
+            <span class="text-xs font-black uppercase tracking-wider text-blue-800">Filosofi Budi Pekerti</span>
+            <h4 class="text-xl font-black text-slate-900">Nilai Karakter Inti "STAR-KIDS"</h4>
+            <p class="text-xs text-slate-600">Delapan pilar karakter utama yang dievaluasi dan diapresiasi setiap hari di sekolah.</p>
+          </div>
+          <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+            <div class="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-2xs">
+              <span class="text-amber-500 font-black text-sm">S</span>
+              <p class="text-xs font-bold text-slate-800">Santun</p>
+              <p class="text-[10px] text-slate-500">5S dalam bersikap</p>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-2xs">
+              <span class="text-blue-500 font-black text-sm">T</span>
+              <p class="text-xs font-bold text-slate-800">Tangguh</p>
+              <p class="text-[10px] text-slate-500">Pantang menyerah</p>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-2xs">
+              <span class="text-emerald-500 font-black text-sm">A</span>
+              <p class="text-xs font-bold text-slate-800">Amanah</p>
+              <p class="text-[10px] text-slate-500">Jujur & dapat dipercaya</p>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 text-center shadow-2xs">
+              <span class="text-indigo-500 font-black text-sm">R</span>
+              <p class="text-xs font-bold text-slate-800">Religius</p>
+              <p class="text-[10px] text-slate-500">Ibadah tepat waktu</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= AKADEMIK & 28 ROMBEL ================= -->
+  <section id="akademik" class="py-16 sm:py-24 bg-slate-50 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+            <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+            Struktur Rombongan Belajar
+          </div>
+          <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-2">
+            28 Rombongan Belajar (Rombel) Terstandar
+          </h3>
+          <p class="text-slate-600 text-sm mt-1">
+            Pengorganisasian kelas paralel berjenjang dari Fase A hingga Fase C dengan pendampingan penuh Wali Kelas.
+          </p>
+        </div>
+
+        <a href="/" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold shadow-xs transition">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Kelola di Portal STAR-KIDS</span>
+        </a>
+      </div>
+
+      <!-- Grid Tingkat Kelas 1 s/d 6 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Kelas 1 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:border-blue-400 transition">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm">1</span>
+              <div>
+                <h4 class="font-bold text-slate-900">Tingkat Kelas 1</h4>
+                <p class="text-[11px] text-slate-500">Fase A Kurikulum Merdeka</p>
+              </div>
+            </div>
+            <span class="text-xs font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full">5 Rombel</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-3">Pembiasaan transisi PAUD-SD menyenangkan, fonik dasar membaca, berhitung, dan sopan santun.</p>
+          <div class="mt-4 flex flex-wrap gap-1.5">
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">1A</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">1B</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">1C</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">1D</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">1E</span>
+          </div>
+        </div>
+
+        <!-- Kelas 2 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:border-blue-400 transition">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-sm">2</span>
+              <div>
+                <h4 class="font-bold text-slate-900">Tingkat Kelas 2</h4>
+                <p class="text-[11px] text-slate-500">Fase A Kurikulum Merdeka</p>
+              </div>
+            </div>
+            <span class="text-xs font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">5 Rombel</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-3">Penguatan literasi dini, penalaran matematika sederhana, dan kerja sama kelompok ramah anak.</p>
+          <div class="mt-4 flex flex-wrap gap-1.5">
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">2A</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">2B</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">2C</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">2D</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">2E</span>
+          </div>
+        </div>
+
+        <!-- Kelas 3 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:border-blue-400 transition">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-sky-600 text-white font-black flex items-center justify-center text-sm">3</span>
+              <div>
+                <h4 class="font-bold text-slate-900">Tingkat Kelas 3</h4>
+                <p class="text-[11px] text-slate-500">Fase B Kurikulum Merdeka</p>
+              </div>
+            </div>
+            <span class="text-xs font-extrabold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full">5 Rombel</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-3">Eksplorasi ilmu pengetahuan alam sosial (IPAS), proyek peduli lingkungan hidup, dan ekstrakurikuler.</p>
+          <div class="mt-4 flex flex-wrap gap-1.5">
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">3A</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">3B</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">3C</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">3D</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">3E</span>
+          </div>
+        </div>
+
+        <!-- Kelas 4 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:border-blue-400 transition">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-sm">4</span>
+              <div>
+                <h4 class="font-bold text-slate-900">Tingkat Kelas 4</h4>
+                <p class="text-[11px] text-slate-500">Fase B Kurikulum Merdeka</p>
+              </div>
+            </div>
+            <span class="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">5 Rombel</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-3">Pengembangan berpikir kritis, proyek P5 gaya hidup berkelanjutan, dan pemanfaatan perpustakaan.</p>
+          <div class="mt-4 flex flex-wrap gap-1.5">
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">4A</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">4B</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">4C</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">4D</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">4E</span>
+          </div>
+        </div>
+
+        <!-- Kelas 5 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:border-blue-400 transition">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-amber-600 text-white font-black flex items-center justify-center text-sm">5</span>
+              <div>
+                <h4 class="font-bold text-slate-900">Tingkat Kelas 5</h4>
+                <p class="text-[11px] text-slate-500">Fase C Kurikulum Merdeka</p>
+              </div>
+            </div>
+            <span class="text-xs font-extrabold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full">4 Rombel</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-3">Persiapan Asesmen Nasional Berbasis Komputer (ANBK), pembiasaan kepemimpinan, dan riset mini sains.</p>
+          <div class="mt-4 flex flex-wrap gap-1.5">
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">5A</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">5B</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">5C</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">5D</span>
+          </div>
+        </div>
+
+        <!-- Kelas 6 -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs hover:border-blue-400 transition">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-rose-600 text-white font-black flex items-center justify-center text-sm">6</span>
+              <div>
+                <h4 class="font-bold text-slate-900">Tingkat Kelas 6</h4>
+                <p class="text-[11px] text-slate-500">Fase C Kurikulum Merdeka</p>
+              </div>
+            </div>
+            <span class="text-xs font-extrabold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full">4 Rombel</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-3">Pendalaman materi kelulusan, pembentukan integritas pribadi, dan pemantapan jenjang menuju SMP Negeri favorit.</p>
+          <div class="mt-4 flex flex-wrap gap-1.5">
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">6A</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">6B</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">6C</span>
+            <span class="px-2 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-semibold">6D</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= FASILITAS & SARANA PRASARANA ================= -->
+  <section id="fasilitas" class="py-16 sm:py-24 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-3xl mx-auto mb-14 space-y-3">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+          <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+          Sarana Penunjang Belajar
+        </div>
+        <h3 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          Fasilitas Sekolah Modern & Ramah Lingkungan
+        </h3>
+        <p class="text-slate-600 text-sm sm:text-base">
+          Mendukung kenyamanan, keselamatan fisik, kesehatan mental, dan kreativitas murid di setiap sudut sekolah.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        <!-- Fasilitas 1 -->
+        <div class="group bg-slate-50 rounded-3xl p-6 border border-slate-200/80 hover:bg-white hover:shadow-xl hover:border-blue-300 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mb-5 group-hover:scale-110 transition">
+            <i data-lucide="monitor" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Laboratorium Komputer & Digital</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Dilengkapi puluhan unit komputer mutakhir terkoneksi internet cepat untuk pelaksanaan ANBK, latihan coding anak, dan literasi digital sejak dini.
+          </p>
+        </div>
+
+        <!-- Fasilitas 2 -->
+        <div class="group bg-slate-50 rounded-3xl p-6 border border-slate-200/80 hover:bg-white hover:shadow-xl hover:border-blue-300 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-5 group-hover:scale-110 transition">
+            <i data-lucide="book-marked" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Perpustakaan Ramah Anak</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Koleksi buku dongeng, ensiklopedia, buku ajar Kurikulum Merdeka, serta area baca santai lesehan yang nyaman dan sejuk ber-AC.
+          </p>
+        </div>
+
+        <!-- Fasilitas 3 -->
+        <div class="group bg-slate-50 rounded-3xl p-6 border border-slate-200/80 hover:bg-white hover:shadow-xl hover:border-blue-300 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mb-5 group-hover:scale-110 transition">
+            <i data-lucide="activity" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Lapangan Olahraga & Upacara</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Area terbuka serbaguna yang luas untuk upacara bendera hari Senin, senam SKJ ceria, latihan bola basket, futsal, dan pentas seni akbar.
+          </p>
+        </div>
+
+        <!-- Fasilitas 4 -->
+        <div class="group bg-slate-50 rounded-3xl p-6 border border-slate-200/80 hover:bg-white hover:shadow-xl hover:border-blue-300 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mb-5 group-hover:scale-110 transition">
+            <i data-lucide="heart-pulse" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Ruang UKS & Pojok Ramah Anak TPPK</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Fasilitas pertolongan pertama kesehatan siswa, timbang badan rutin bersama Puskesmas Purworejo, serta ruang konseling pencegahan kekerasan yang aman.
+          </p>
+        </div>
+
+        <!-- Fasilitas 5 -->
+        <div class="group bg-slate-50 rounded-3xl p-6 border border-slate-200/80 hover:bg-white hover:shadow-xl hover:border-blue-300 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center mb-5 group-hover:scale-110 transition">
+            <i data-lucide="sprout" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Kebun Toga & Green House Adiwiyata</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Media praktik sains langsung bagi peserta didik mengenai pembibitan tanaman herbal, hidroponik, dan pengomposan daun gugur sekolah.
+          </p>
+        </div>
+
+        <!-- Fasilitas 6 -->
+        <div class="group bg-slate-50 rounded-3xl p-6 border border-slate-200/80 hover:bg-white hover:shadow-xl hover:border-blue-300 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mb-5 group-hover:scale-110 transition">
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
+          </div>
+          <h4 class="text-lg font-bold text-slate-900 mb-2">Keamanan Terpadu & Akses Ramah Difabel</h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Petugas Pengamanan Sekolah Dasar (PPSD) sigap, kamera pengawas CCTV 24 jam di titik vital, serta jalur ramp kursi roda yang inklusif.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= BERITA & PENGUMUMAN TERBARU ================= -->
+  <section id="berita" class="py-16 sm:py-24 bg-slate-50 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+            <i data-lucide="newspaper" class="w-3.5 h-3.5"></i>
+            Kabar & Aktivitas Terkini
+          </div>
+          <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-2">
+            Warta Sekolah & Prestasi Siswa
+          </h3>
+          <p class="text-slate-600 text-sm mt-1">
+            Liputan agenda akademik, kegiatan ekstrakurikuler, dan penghargaan civitas SDN Kebonagung.
+          </p>
+        </div>
+
+        <span class="text-xs font-bold text-slate-500">Tahun Pembelajaran 2026/2027</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Artikel 1 -->
+        <article class="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-lg transition flex flex-col justify-between">
+          <div>
+            <div class="h-44 bg-gradient-to-tr from-blue-700 to-sky-500 p-6 flex flex-col justify-between text-white relative">
+              <span class="inline-block px-2.5 py-1 rounded-lg bg-black/30 backdrop-blur-md text-[10px] font-black uppercase tracking-wider self-start text-amber-300">
+                Inovasi Digital
+              </span>
+              <div>
+                <span class="text-[11px] text-blue-100 flex items-center gap-1">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5"></i> September 2026
+                </span>
+              </div>
+            </div>
+            <div class="p-6 space-y-2.5">
+              <h4 class="text-base font-extrabold text-slate-900 hover:text-blue-700 transition cursor-pointer">
+                Implementasi Aplikasi STAR-KIDS di 28 Rombongan Belajar
+              </h4>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                SDN Kebonagung resmi menggunakan sistem monitoring perilaku dan absensi online STAR-KIDS untuk meningkatkan transparansi komunikasi guru dan orang tua.
+              </p>
+            </div>
+          </div>
+          <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[11px] text-slate-500 font-medium">Oleh: Tim Humas Sekolah</span>
+            <a href="/" class="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1">
+              Buka STAR-KIDS <i data-lucide="arrow-right" class="w-3 h-3"></i>
+            </a>
+          </div>
+        </article>
+
+        <!-- Artikel 2 -->
+        <article class="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-lg transition flex flex-col justify-between">
+          <div>
+            <div class="h-44 bg-gradient-to-tr from-emerald-700 to-teal-500 p-6 flex flex-col justify-between text-white relative">
+              <span class="inline-block px-2.5 py-1 rounded-lg bg-black/30 backdrop-blur-md text-[10px] font-black uppercase tracking-wider self-start text-emerald-200">
+                Kegiatan P5
+              </span>
+              <div>
+                <span class="text-[11px] text-emerald-100 flex items-center gap-1">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Agustus 2026
+                </span>
+              </div>
+            </div>
+            <div class="p-6 space-y-2.5">
+              <h4 class="text-base font-extrabold text-slate-900 hover:text-blue-700 transition cursor-pointer">
+                Semarak Gelar Karya Projek Penguatan Profil Pelajar Pancasila
+              </h4>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Murid kelas 1 hingga kelas 6 menampilkan inovasi daur ulang sampah plastik, pertunjukan tari daerah Pasuruan, dan bazar kuliner tradisional sehat.
+              </p>
+            </div>
+          </div>
+          <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[11px] text-slate-500 font-medium">Oleh: Tim Kurikulum</span>
+            <span class="text-xs font-bold text-slate-400">Liputan Lengkap</span>
+          </div>
+        </article>
+
+        <!-- Artikel 3 -->
+        <article class="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-lg transition flex flex-col justify-between">
+          <div>
+            <div class="h-44 bg-gradient-to-tr from-amber-600 to-rose-600 p-6 flex flex-col justify-between text-white relative">
+              <span class="inline-block px-2.5 py-1 rounded-lg bg-black/30 backdrop-blur-md text-[10px] font-black uppercase tracking-wider self-start text-amber-200">
+                Prestasi Membanggakan
+              </span>
+              <div>
+                <span class="text-[11px] text-amber-100 flex items-center gap-1">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Juli 2026
+                </span>
+              </div>
+            </div>
+            <div class="p-6 space-y-2.5">
+              <h4 class="text-base font-extrabold text-slate-900 hover:text-blue-700 transition cursor-pointer">
+                Kontingen SDN Kebonagung Raih Juara Umum O2SN & FLS2N Kota
+              </h4>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Raihan medali emas cabang renang, atletik cilik, serta juara 1 lomba menyanyi tunggal membuktikan kualitas bakat non-akademik siswa yang terus dibina.
+              </p>
+            </div>
+          </div>
+          <div class="px-6 pb-6 pt-2 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[11px] text-slate-500 font-medium">Oleh: Pembina Prestasi</span>
+            <span class="text-xs font-bold text-slate-400">Prestasi Kota</span>
+          </div>
+        </article>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= BANNER CALL-TO-ACTION PORTAL ================= -->
+  <section class="py-14 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="flex flex-col lg:flex-row items-center justify-between gap-8 text-center lg:text-left">
+        <div class="max-w-2xl space-y-2">
+          <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black bg-amber-400 text-slate-950 uppercase">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Sistem Khusus Internal Sekolah
+          </span>
+          <h3 class="text-2xl sm:text-3xl font-black text-white">
+            Akses Guru, Wali Kelas & Orang Tua di Portal STAR-KIDS
+          </h3>
+          <p class="text-sm text-blue-200">
+            Catat kehadiran 28 rombel secara realtime, pantau poin reward karakter, rekapitulasi data SIM-PEG, cetak surat panggilan resmi, dan koordinasi pencegahan TPPK dalam satu sistem.
+          </p>
+        </div>
+        <a href="/" class="px-8 py-4 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-2xl shadow-xl hover:shadow-amber-400/30 transition transform hover:-translate-y-0.5 flex items-center gap-3 text-sm shrink-0">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>BUKA APLIKASI UTAMA (STAR-KIDS)</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= KONTAK & LOKASI SEKOLAH ================= -->
+  <section id="kontak" class="py-16 sm:py-24 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        <!-- Kolom Informasi Kontak -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+            Hubungi Kami
+          </div>
+          <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Layanan Terbuka & Ramah untuk Warga Sekolah
+          </h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            Kami menyambut hangat kunjungan bapak/ibu wali murid, instansi pendidikan, maupun masyarakat yang ingin berkolaborasi demi kemajuan peserta didik kami.
+          </p>
+
+          <div class="space-y-4 pt-2">
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="map-pin" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Alamat Kampus Sekolah</h5>
+                <p class="text-sm font-bold text-slate-900 mt-0.5">
+                  Jl. Raya Kebonagung No. 12, Kel. Kebonagung, Kec. Purworejo, Kota Pasuruan, Jawa Timur 67116
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="clock" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Jam Pelayanan Kantor Tata Usaha</h5>
+                <p class="text-sm font-bold text-slate-900 mt-0.5">
+                  Senin – Kamis : 06.45 – 14.30 WIB<br />
+                  Jumat : 06.45 – 11.30 WIB
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="phone-call" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Telepon & WhatsApp Layanan</h5>
+                <p class="text-sm font-bold text-slate-900 mt-0.5">
+                  Telepon: (0343) 421890 &bull; WA Humas: 0812-3456-7890
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="mail" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Surat Elektronik (Email)</h5>
+                <p class="text-sm font-bold text-slate-900 mt-0.5">
+                  sdnkebonagung@pasuruankota.go.id<br />
+                  sdnkebonagung.pasuruan@gmail.com
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Kirim Pesan / Layanan Aspirasi -->
+        <div class="lg:col-span-7">
+          <div class="bg-slate-50 rounded-3xl p-8 border border-slate-200/80 shadow-xs">
+            <h4 class="text-lg font-bold text-slate-900 mb-1">Kirim Pesan / Pengaduan Aspirasi Ramah Anak</h4>
+            <p class="text-xs text-slate-500 mb-6">Pesan Anda akan langsung diterima oleh Tim Humas & Tata Usaha SDN Kebonagung.</p>
+
+            <form onsubmit="event.preventDefault(); alert('Terima kasih! Pesan dan aspirasi Anda telah terkirim ke Tata Usaha UPT SDN Kebonagung Kota Pasuruan.'); this.reset();" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Anda *</label>
+                  <input type="text" required placeholder="Contoh: Bpk. Ahmad Yani" class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp / HP *</label>
+                  <input type="tel" required placeholder="081234567890" class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Status Pengirim</label>
+                  <select class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600">
+                    <option>Orang Tua / Wali Murid</option>
+                    <option>Alumni SDN Kebonagung</option>
+                    <option>Masyarakat Umum / Tetangga</option>
+                    <option>Instansi / Lembaga Mitra</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Topik Pesan</label>
+                  <select class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600">
+                    <option>Informasi PPDB / Pindahan</option>
+                    <option>Layanan Kurikulum & Konseling</option>
+                    <option>Pengaduan Satgas TPPK (Rahasia)</option>
+                    <option>Kerja Sama & Kemitraan</option>
+                    <option>Lainnya</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Isi Pesan / Pertanyaan *</label>
+                <textarea required rows="4" placeholder="Tuliskan pesan atau masukan Anda dengan sopan..." class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"></textarea>
+              </div>
+
+              <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>Kirim Pesan ke Sekolah</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= FOOTER RESMI ================= -->
+  <footer class="bg-slate-950 text-slate-400 text-xs border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        
+        <!-- Col 1: Logo & Deskripsi -->
+        <div class="space-y-3">
+          <div class="flex items-center gap-3 text-white">
+            <div class="w-9 h-9 rounded-xl bg-blue-700 flex items-center justify-center text-amber-300 font-black">
+              ★
+            </div>
+            <div>
+              <p class="font-extrabold text-sm leading-tight">SDN KEBONAGUNG</p>
+              <p class="text-[10px] text-slate-400">Kota Pasuruan &bull; Jawa Timur</p>
+            </div>
+          </div>
+          <p class="text-[11px] leading-relaxed text-slate-400">
+            UPT Satuan Pendidikan Dasar Negeri yang berdedikasi membangun insan beriman, berilmu, berbudi pekerti, berwawasan Adiwiyata, dan bebas dari perundungan.
+          </p>
+        </div>
+
+        <!-- Col 2: Tautan Cepat -->
+        <div class="space-y-2">
+          <h5 class="text-xs font-bold text-white uppercase tracking-wider">Jelajahi Profil</h5>
+          <ul class="space-y-1.5 text-[11px]">
+            <li><a href="#beranda" class="hover:text-blue-400 transition">Beranda Utama</a></li>
+            <li><a href="#profil" class="hover:text-blue-400 transition">Visi & Misi Pendidikan</a></li>
+            <li><a href="#sambutan" class="hover:text-blue-400 transition">Sambutan Kepala Sekolah</a></li>
+            <li><a href="#akademik" class="hover:text-blue-400 transition">Daftar 28 Rombel</a></li>
+            <li><a href="#fasilitas" class="hover:text-blue-400 transition">Fasilitas Sekolah</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Portal & Link Eksternal -->
+        <div class="space-y-2">
+          <h5 class="text-xs font-bold text-white uppercase tracking-wider">Portal Pendidikan</h5>
+          <ul class="space-y-1.5 text-[11px]">
+            <li><a href="/" class="text-amber-300 font-bold hover:underline flex items-center gap-1">★ Portal STAR-KIDS</a></li>
+            <li><a href="https://dapo.kemdikbud.go.id" target="_blank" rel="noreferrer" class="hover:text-blue-400 transition">Data Pokok Pendidikan (Dapodik)</a></li>
+            <li><a href="https://kemdikbud.go.id" target="_blank" rel="noreferrer" class="hover:text-blue-400 transition">Kementerian Dikbudristek RI</a></li>
+            <li><a href="https://pasuruankota.go.id" target="_blank" rel="noreferrer" class="hover:text-blue-400 transition">Pemerintah Kota Pasuruan</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 4: Data Legalitas -->
+        <div class="space-y-2">
+          <h5 class="text-xs font-bold text-white uppercase tracking-wider">Legalitas & Identitas</h5>
+          <div class="bg-slate-900 rounded-xl p-3 border border-slate-800 space-y-1 text-[11px]">
+            <p><span class="text-slate-500">NPSN:</span> <strong class="text-slate-200">20535384</strong></p>
+            <p><span class="text-slate-500">NSS:</span> <strong class="text-slate-200">101056301014</strong></p>
+            <p><span class="text-slate-500">Status:</span> <strong class="text-emerald-400">Negeri</strong></p>
+            <p><span class="text-slate-500">Akreditasi:</span> <strong class="text-amber-400">A (Unggul)</strong></p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
+        <p>© 2026 UPT Satuan Pendidikan SDN Kebonagung Kota Pasuruan. Hak Cipta Dilindungi.</p>
+        <p class="text-slate-500">Terintegrasi dengan Ekosistem Digital STAR-KIDS Kota Pasuruan</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= SCRIPT INTERAKTIF SEDERHANA ================= -->
+  <script>
+    // Inisialisasi ikon Lucide
+    lucide.createIcons();
+
+    // Toggle menu mobile hamburger
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+      // Tutup menu saat tautan diklik
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>

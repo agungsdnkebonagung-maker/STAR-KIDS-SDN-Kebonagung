@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MasterKelas, 
   MasterPelanggaran, 
   MasterReward, 
   SystemSettings, 
-  UserRole 
+  UserRole,
+  SchoolProfileData
 } from '../types';
 import { WALI_KELAS_NIP_MAP } from '../data/constants';
+import { DEFAULT_SCHOOL_PROFILE } from '../data/initialData';
+import { SchoolProfileSettingsTab } from './SchoolProfileSettingsTab';
 import { 
   Settings, 
   School, 
@@ -24,7 +27,8 @@ import {
   X,
   Check,
   Sparkles,
-  UserCheck
+  UserCheck,
+  Building2
 } from 'lucide-react';
 
 interface PengaturanViewProps {
@@ -38,6 +42,7 @@ interface PengaturanViewProps {
   onUpdateReward: (list: MasterReward[]) => void;
   onUpdateSettings: (settings: SystemSettings) => void;
   onChangePasswordAdmin: (newPassword: string) => boolean;
+  onNavigateToPegawai?: () => void;
 }
 
 export const PengaturanView: React.FC<PengaturanViewProps> = ({
@@ -50,11 +55,17 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
   onUpdatePelanggaran,
   onUpdateReward,
   onUpdateSettings,
-  onChangePasswordAdmin
+  onChangePasswordAdmin,
+  onNavigateToPegawai
 }) => {
-  const [activeTab, setActiveTab] = useState<'umum' | 'kelas' | 'pelanggaran' | 'reward' | 'keamanan'>('umum');
+  const [activeTab, setActiveTab] = useState<'sekolah' | 'umum' | 'kelas' | 'pelanggaran' | 'reward' | 'keamanan'>('sekolah');
   const [tempSettings, setTempSettings] = useState<SystemSettings>(systemSettings);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Sync tempSettings whenever systemSettings updates
+  useEffect(() => {
+    setTempSettings(systemSettings);
+  }, [systemSettings]);
 
   // Security tab state
   const [currentPw, setCurrentPw] = useState('');
@@ -250,8 +261,18 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
         <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 overflow-x-auto self-start md:self-auto">
           <button
             type="button"
+            onClick={() => setActiveTab('sekolah')}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+              activeTab === 'sekolah' ? 'bg-white text-blue-900 shadow-xs font-extrabold' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5 text-blue-600" />
+            <span>Data Sekolah & Logo</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('umum')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all shrink-0 ${
               activeTab === 'umum' ? 'bg-white text-blue-900 shadow-xs font-extrabold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -260,7 +281,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('kelas')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all shrink-0 ${
               activeTab === 'kelas' ? 'bg-white text-blue-900 shadow-xs font-extrabold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -269,7 +290,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('pelanggaran')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all shrink-0 ${
               activeTab === 'pelanggaran' ? 'bg-white text-blue-900 shadow-xs font-extrabold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -278,7 +299,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('reward')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all shrink-0 ${
               activeTab === 'reward' ? 'bg-white text-blue-900 shadow-xs font-extrabold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -287,7 +308,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('keamanan')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all shrink-0 ${
               activeTab === 'keamanan' ? 'bg-white text-blue-900 shadow-xs font-extrabold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -301,6 +322,23 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{successMsg}</span>
         </div>
+      )}
+
+      {/* TAB 0: DATA SEKOLAH & LOGO */}
+      {activeTab === 'sekolah' && (
+        <SchoolProfileSettingsTab
+          initialProfile={tempSettings.schoolProfile || DEFAULT_SCHOOL_PROFILE}
+          onSaveProfile={(updatedProfile) => {
+            const updated = {
+              ...tempSettings,
+              schoolProfile: updatedProfile
+            };
+            setTempSettings(updated);
+            onUpdateSettings(updated);
+            showNotification('Data identitas sekolah, nomor telepon pengaduan, dan logo resmi berhasil disimpan.');
+          }}
+          onNavigateToPegawai={onNavigateToPegawai}
+        />
       )}
 
       {/* TAB 1: UMUM & AMBANG BATAS */}
@@ -471,6 +509,32 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
       {/* TAB 2: KELAS & ROMBEL */}
       {activeTab === 'kelas' && (
         <div className="space-y-6">
+          {/* SIM-PEG Kepegawaian Fast Link Banner */}
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-sky-900 rounded-2xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-300 text-blue-950 uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-amber-800" />
+                Modul Kepegawaian Terintegrasi (SIM-PEG)
+              </div>
+              <h4 className="text-base font-black">
+                Perbaikan & Upload Data Wali Kelas, Guru Mapel, TU & Staff Sekolah
+              </h4>
+              <p className="text-xs text-blue-100 max-w-2xl">
+                Tersedia modul lengkap untuk mengimpor Excel, mengubah data Kepala Sekolah, Wali Kelas 28 Rombel, Guru Mapel, Administrasi, hingga petugas OB dan PPSD dalam satu tempat.
+              </p>
+            </div>
+            {onNavigateToPegawai && (
+              <button
+                type="button"
+                onClick={onNavigateToPegawai}
+                className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-blue-950 font-black text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Buka Data Pegawai & Guru</span>
+              </button>
+            )}
+          </div>
+
           {/* Add Class Card */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">

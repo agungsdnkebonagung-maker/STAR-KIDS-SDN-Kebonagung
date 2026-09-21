@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SchoolLogo } from './SchoolLogo';
-import { UserRole } from '../types';
+import { UserRole, SchoolProfileData } from '../types';
 import { X, Lock, User, ShieldCheck, Eye, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface LoginModalProps {
@@ -8,16 +8,18 @@ interface LoginModalProps {
   onClose: () => void;
   onLogin: (role: UserRole) => void;
   expectedPassword?: string;
+  schoolProfile?: SchoolProfileData;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ 
   isOpen, 
   onClose, 
   onLogin,
-  expectedPassword = 'admin' 
+  expectedPassword = 'admin',
+  schoolProfile
 }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -37,7 +39,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         onClose();
       }, 500);
     } else {
-      setErrorMessage(`Username atau password admin salah! (Default: admin / ${validPassword})`);
+      setErrorMessage('Username atau kata sandi yang dimasukkan salah.');
     }
   };
 
@@ -65,15 +67,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
           <div className="flex justify-center mb-3">
             <div className="p-2 bg-white rounded-2xl shadow-md inline-block">
-              <SchoolLogo size={52} />
+              <SchoolLogo size={52} customLogoUrl={schoolProfile?.logoUrl} />
             </div>
           </div>
           <h3 className="text-lg font-extrabold tracking-tight">
-            Login Sistem STAR-KIDS
+            Login Sistem STAR-KIDS {schoolProfile?.namaSingkat || 'Kebonagung'}
           </h3>
           <p className="text-xs text-blue-200 mt-0.5">
-            UPT SDN Kebonagung Kota Pasuruan
+            {schoolProfile?.namaSekolah || 'UPT SDN Kebonagung Kota Pasuruan'}
           </p>
+          <div className="mt-2 inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/10 text-[10px] font-bold text-amber-300 border border-white/15">
+            <span className="font-mono">NPSN: {schoolProfile?.npsn || '20535384'}</span>
+            <span className="text-white/40">&bull;</span>
+            <span className="text-emerald-300">Akreditasi {schoolProfile?.akreditasi || 'A'}</span>
+          </div>
         </div>
 
         {/* Content Body */}
@@ -115,7 +122,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="admin"
+                    placeholder="Masukkan username admin"
                     required
                     className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-slate-50/50"
                   />
@@ -132,18 +139,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="admin"
+                    placeholder="Masukkan kata sandi"
                     required
                     className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-slate-50/50"
                   />
                 </div>
               </div>
-            </div>
-
-            <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-600">
-              <span className="font-semibold text-slate-800">Petunjuk Akun Admin:</span>
-              <br />
-              Username: <code className="font-mono bg-white px-1.5 py-0.5 rounded border text-blue-700">admin</code> &bull; Password: <code className="font-mono bg-white px-1.5 py-0.5 rounded border text-blue-700">admin</code>
             </div>
 
             <button

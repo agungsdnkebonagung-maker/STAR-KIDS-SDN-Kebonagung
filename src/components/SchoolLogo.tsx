@@ -1,16 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface SchoolLogoProps {
   className?: string;
   size?: number | string;
   showText?: boolean;
+  customLogoUrl?: string | null;
 }
 
 export const SchoolLogo: React.FC<SchoolLogoProps> = ({
   className = '',
   size = 48,
-  showText = false
+  showText = false,
+  customLogoUrl
 }) => {
+  const [imgError, setImgError] = useState(false);
+
+  // If custom logo uploaded and hasn't errored out, render the custom image
+  if (customLogoUrl && !imgError) {
+    const sizeStyle = typeof size === 'number' ? { width: `${size}px`, height: `${size}px` } : { width: size, height: size };
+    return (
+      <div className={`inline-flex items-center gap-3 ${className}`}>
+        <div 
+          style={sizeStyle}
+          className="shrink-0 rounded-2xl overflow-hidden bg-white flex items-center justify-center p-0.5 border border-slate-200/90 shadow-2xs transition-transform hover:scale-105 duration-200"
+        >
+          <img
+            src={customLogoUrl}
+            alt="Logo Sekolah"
+            className="w-full h-full object-contain"
+            onError={() => setImgError(true)}
+          />
+        </div>
+        {showText && (
+          <div className="flex flex-col">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-600">
+              KOTA PASURUAN
+            </span>
+            <span className="text-base font-extrabold text-slate-900 leading-tight">
+              SDN Kebonagung
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">
+              TPPK &bull; Disiplin & Apresiasi Karakter
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
       <svg

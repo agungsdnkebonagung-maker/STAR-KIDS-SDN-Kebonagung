@@ -21,7 +21,12 @@ import {
   Printer, 
   ShieldAlert,
   X,
-  Sparkles
+  Sparkles,
+  Lock,
+  ShieldCheck,
+  AlertCircle,
+  Info,
+  UserCheck
 } from 'lucide-react';
 
 interface PelanggaranViewProps {
@@ -166,6 +171,35 @@ export const PelanggaranView: React.FC<PelanggaranViewProps> = ({
     setIsModalOpen(false);
   };
 
+  // State khusus Orang Tua (View Only)
+  const [parentNisnQuery, setParentNisnQuery] = useState('');
+  const [parentFoundStudent, setParentFoundStudent] = useState<Student | null>(null);
+  const [parentStudentViolations, setParentStudentViolations] = useState<PelanggaranRecord[]>([]);
+  const [parentSearchError, setParentSearchError] = useState<string | null>(null);
+  const [hasCheckedNisn, setHasCheckedNisn] = useState(false);
+
+  const handleParentSearch = (nisnOverride?: string) => {
+    const query = (nisnOverride !== undefined ? nisnOverride : parentNisnQuery).trim();
+    setHasCheckedNisn(true);
+    if (!query) {
+      setParentSearchError('Silakan masukkan nomor NISN putra/putri Anda.');
+      setParentFoundStudent(null);
+      setParentStudentViolations([]);
+      return;
+    }
+    const student = students.find(s => s.nisn.trim() === query || s.nisn.toLowerCase() === query.toLowerCase());
+    if (student) {
+      setParentFoundStudent(student);
+      const vList = pelanggaranList.filter(p => p.nisn.trim() === student.nisn.trim());
+      setParentStudentViolations(vList);
+      setParentSearchError(null);
+    } else {
+      setParentFoundStudent(null);
+      setParentStudentViolations([]);
+      setParentSearchError(`NISN "${query}" tidak ditemukan dalam pangkalan data siswa sekolah. Mohon periksa kembali kartu pelajar atau buku rapor.`);
+    }
+  };
+
   // Filtered List
   const filteredList = useMemo(() => {
     return pelanggaranList.filter(item => {
@@ -178,6 +212,219 @@ export const PelanggaranView: React.FC<PelanggaranViewProps> = ({
       return matchSearch && matchKelas && matchKategori;
     });
   }, [pelanggaranList, searchTerm, filterKelas, filterKategori]);
+
+  // JIKA ROLE ADALAH VIEW_ONLY (ORANG TUA)
+  // Sesuai permintaan: data pelanggaran tidak disajikan secara publik/umum,
+  // melainkan harus memasukkan NISN siswa yang ingin dicek untuk menjaga privasi.
+  if (role === 'view_only') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Header Orang Tua */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200">
+              <Lock className="w-3.5 h-3.5 text-blue-600" />
+              <span>Portal Orang Tua / Wali Murid</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              Pemeriksaan Catatan Disiplin Siswa
+            </h1>
+            <p className="text-xs text-slate-500">
+              Akses rekam kedisiplinan dan tata tertib ananda secara privat dan terlindungi dengan verifikasi NISN
+            </p>
+          </div>
+
+          <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold flex items-center gap-2 self-start md:self-auto">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Mode Khusus Wali Murid</span>
+          </div>
+        </div>
+
+        {/* Kotak Kebijakan Privasi */}
+        <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-5 text-amber-950 flex flex-col sm:flex-row items-start gap-3.5 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-amber-800" />
+          </div>
+          <div className="space-y-1 text-xs">
+            <h3 className="font-bold text-amber-900 text-sm">Prinsip Kerahasiaan & Etika Pendidikan</h3>
+            <p className="leading-relaxed text-amber-900/90">
+              Sesuai pedoman TPPK dan regulasi perlindungan privasi peserta didik, catatan pelanggaran tata tertib <strong>tidak dipublikasikan secara umum</strong> ke publik. Orang tua/wali hanya dapat melihat catatan kedisiplinan putra/putri masing-masing secara eksklusif setelah memasukkan nomor <strong>NISN</strong> siswa yang sah.
+            </p>
+          </div>
+        </div>
+
+        {/* Kartu Input Pencarian NISN */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+          <div>
+            <label className="text-xs font-black text-slate-700 uppercase tracking-wider block mb-1.5">
+              Masukkan Nomor Induk Siswa Nasional (NISN) Ananda
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={parentNisnQuery}
+                  onChange={(e) => {
+                    setParentNisnQuery(e.target.value);
+                    if (hasCheckedNisn) setHasCheckedNisn(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleParentSearch();
+                  }}
+                  placeholder="Contoh: 0134567890 (10 digit NISN)..."
+                  className="w-full pl-10 pr-4 py-3 text-sm font-semibold border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 text-slate-900"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleParentSearch()}
+                className="px-6 py-3 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2 shrink-0"
+              >
+                <Search className="w-4 h-4" />
+                <span>Periksa Catatan Disiplin</span>
+              </button>
+            </div>
+
+            {/* Quick Demo Chips */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-3">
+              <span className="text-[11px] text-slate-400 font-semibold">Coba NISN Siswa Demo:</span>
+              {students.slice(0, 5).map((st) => (
+                <button
+                  key={st.nisn}
+                  type="button"
+                  onClick={() => {
+                    setParentNisnQuery(st.nisn);
+                    handleParentSearch(st.nisn);
+                  }}
+                  className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-100 hover:text-blue-900 text-slate-700 transition cursor-pointer border border-slate-200"
+                >
+                  {st.namaLengkap.split(' ')[0]} ({st.nisn})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Hasil Pengecekan */}
+          {hasCheckedNisn && (
+            <div className="pt-3 border-t border-slate-100 animate-in fade-in duration-200">
+              {parentSearchError ? (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs sm:text-sm text-rose-800 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block">Pemeriksaan Tidak Ditemukan</span>
+                    <p className="text-xs text-rose-700 mt-0.5">{parentSearchError}</p>
+                  </div>
+                </div>
+              ) : parentFoundStudent ? (
+                <div className="space-y-4">
+                  {/* Card Profil Siswa */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-700 text-white font-black flex items-center justify-center text-lg shadow-sm">
+                        {parentFoundStudent.namaLengkap.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-black text-slate-900">{parentFoundStudent.namaLengkap}</h3>
+                          <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900">
+                            Kelas {parentFoundStudent.kelas}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 font-medium mt-0.5 flex flex-wrap items-center gap-2">
+                          <span>NISN: <strong className="font-mono text-slate-700">{parentFoundStudent.nisn}</strong></span>
+                          <span>&bull;</span>
+                          <span>Jenis Kelamin: {parentFoundStudent.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="self-start sm:self-auto">
+                      <span className={`text-xs font-black px-3.5 py-1.5 rounded-xl inline-flex items-center gap-1.5 ${
+                        parentStudentViolations.length === 0
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-rose-100 text-rose-800 border border-rose-300'
+                      }`}>
+                        {parentStudentViolations.length === 0 ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            <span>Siswa Tertib & Disiplin</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertTriangle className="w-4 h-4 text-rose-600" />
+                            <span>{parentStudentViolations.length} Catatan Disiplin</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Rekam Pelanggaran */}
+                  {parentStudentViolations.length === 0 ? (
+                    <div className="p-6 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-emerald-900 space-y-2 text-center sm:text-left">
+                      <div className="flex items-center justify-center sm:justify-start gap-2.5 font-black text-emerald-800 text-sm sm:text-base">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                        <span>Catatan Kedisiplinan Bersih</span>
+                      </div>
+                      <p className="text-xs text-emerald-800 leading-relaxed max-w-2xl">
+                        Alhamdulillah, ananda <strong>{parentFoundStudent.namaLengkap}</strong> memiliki rekam kedisiplinan yang sangat baik. Tidak ada riwayat pelanggaran tata tertib yang tercatat di sistem pembinaan karakter sekolah. Pertahankan prestasi dan karakter terpuji ananda!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                        Rincian Riwayat Pelanggaran & Pembinaan:
+                      </h4>
+                      <div className="space-y-2.5">
+                        {parentStudentViolations.map((item) => (
+                          <div key={item.id} className="p-4 rounded-xl bg-white border border-rose-200 shadow-2xs space-y-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <h5 className="font-bold text-sm text-slate-900">{item.jenisPelanggaran}</h5>
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                    item.kategori === 'Berat' 
+                                      ? 'bg-rose-100 text-rose-800' 
+                                      : item.kategori === 'Sedang' 
+                                      ? 'bg-amber-100 text-amber-800' 
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}>
+                                    Kategori {item.kategori}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-bold">&bull;</span>
+                                  <span className="text-[11px] text-slate-500 font-medium">
+                                    Lokasi: {item.lokasiKejadian}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-black text-xs shrink-0">
+                                -{item.poin} Poin
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-slate-500 pt-1.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                              <span>Tanggal Kejadian: <strong>{item.tanggal} ({item.jam})</strong></span>
+                              <span>Pencatat: {item.petugas}</span>
+                            </div>
+
+                            <div className="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200 text-xs text-amber-950">
+                              <span className="font-bold block text-amber-900 mb-0.5">Tindak Lanjut & Konseling:</span>
+                              <p className="text-amber-900/90">{item.tindakLanjut}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

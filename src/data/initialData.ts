@@ -8,6 +8,7 @@ import {
   MasterReward,
   MasterKelas,
   SystemSettings,
+  SchoolProfileData,
   AuditLog
 } from '../types';
 
@@ -1082,6 +1083,32 @@ export const MASTER_REWARDS: MasterReward[] = [
   { id: 'MR-12', kategori: 'Teladan', tingkat: 'Sekolah', jenisReward: 'Keteladanan Kedisiplinan 100% Kehadiran Tanpa Terlambat', poin: 30, statusAktif: true },
 ];
 
+export const DEFAULT_SCHOOL_PROFILE: SchoolProfileData = {
+  namaSekolah: 'UPT Satuan Pendidikan SDN Kebonagung Kota Pasuruan',
+  namaSingkat: 'SDN Kebonagung',
+  npsn: '20535384',
+  nss: '101056302001',
+  statusSekolah: 'Negeri',
+  akreditasi: 'A (Unggul)',
+  tagline: 'Sekolah Ramah Anak, Berbudaya Lingkungan Adiwiyata & Berkarakter Juara',
+  alamatJalan: 'Jl. Raya Kebonagung No. 12',
+  kelurahan: 'Kebonagung',
+  kecamatan: 'Purworejo',
+  kota: 'Kota Pasuruan',
+  provinsi: 'Jawa Timur',
+  kodePos: '67116',
+  teleponKantor: '(0343) 421890',
+  noTeleponPengaduan: '0812-3456-7890',
+  hotlineTppk: '0812-3456-7890',
+  email: 'sdnkebonagung@pasuruankota.go.id',
+  website: 'https://sdnkebonagung.sch.id',
+  jamLayananPengaduan: 'Senin - Jumat (07.00 - 15.00 WIB)',
+  penanggungJawabPengaduan: 'Satgas TPPK & Tim Humas SDN Kebonagung',
+  kepalaSekolahNama: 'Hj. Sukesi, M.Pd.',
+  kepalaSekolahNip: '19710314 199605 2 001',
+  logoUrl: '' // Empty by default so it uses the official vector logo
+};
+
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   alpaPerhatian: 3,
   alpaRisiko: 5,
@@ -1089,7 +1116,8 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   kehadiranTindakLanjutPct: 80,
   tahunAjaran: '2026/2027',
   semester: 'Ganjil',
-  adminPassword: 'admin'
+  adminPassword: 'admin',
+  schoolProfile: DEFAULT_SCHOOL_PROFILE
 };
 
 export const INITIAL_AUDIT_LOGS: AuditLog[] = [

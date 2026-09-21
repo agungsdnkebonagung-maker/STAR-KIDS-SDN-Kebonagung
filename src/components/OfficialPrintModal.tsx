@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Student, PelanggaranRecord } from '../types';
+import { Student, PelanggaranRecord, SchoolProfileData } from '../types';
 import { SchoolLogo } from './SchoolLogo';
 import { Printer, X, FileText } from 'lucide-react';
 
@@ -33,6 +33,9 @@ interface OfficialPrintModalProps {
   pelanggaran?: PelanggaranRecord | null;
   mode?: 'surat_panggilan' | 'rekap_karakter' | 'rekap_absensi';
   attendanceRekap?: AttendanceRekapPrintData | null;
+  kepalaSekolahName?: string;
+  kepalaSekolahNip?: string;
+  schoolProfile?: SchoolProfileData;
 }
 
 export const OfficialPrintModal: React.FC<OfficialPrintModalProps> = ({
@@ -41,9 +44,15 @@ export const OfficialPrintModal: React.FC<OfficialPrintModalProps> = ({
   student,
   pelanggaran,
   mode = 'surat_panggilan',
-  attendanceRekap
+  attendanceRekap,
+  kepalaSekolahName = 'Hj. Sukesi, M.Pd.',
+  kepalaSekolahNip = '19710314 199605 2 001',
+  schoolProfile
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
+
+  const effectiveKsName = schoolProfile?.kepalaSekolahNama || kepalaSekolahName;
+  const effectiveKsNip = schoolProfile?.kepalaSekolahNip || kepalaSekolahNip;
 
   if (!isOpen) return null;
   if (mode !== 'rekap_absensi' && !student) return null;
@@ -98,19 +107,22 @@ export const OfficialPrintModal: React.FC<OfficialPrintModalProps> = ({
           
           {/* KOP SURAT RESMI */}
           <div className="border-b-4 border-double border-slate-900 pb-4 mb-6 flex items-center gap-4">
-            <SchoolLogo size={90} />
+            <SchoolLogo size={90} customLogoUrl={schoolProfile?.logoUrl} />
             <div className="text-center flex-1">
               <h4 className="text-sm font-bold tracking-wider uppercase">
-                PEMERINTAH KOTA PASURUAN
+                PEMERINTAH {schoolProfile?.kota?.toUpperCase() || 'KOTA PASURUAN'}
               </h4>
               <h3 className="text-sm font-bold tracking-wide uppercase">
                 DINAS PENDIDIKAN DAN KEBUDAYAAN
               </h3>
               <h2 className="text-xl font-extrabold tracking-tight uppercase text-blue-950 font-sans">
-                UPT SD NEGERI KEBONAGUNG
+                {schoolProfile?.namaSekolah || 'UPT SD NEGERI KEBONAGUNG'}
               </h2>
+              <p className="text-[11px] font-sans text-slate-600 italic leading-tight mt-1">
+                {schoolProfile?.alamatJalan || 'Jl. Kebonagung'}, {schoolProfile?.kelurahan ? `Kel. ${schoolProfile.kelurahan}, ` : ''}{schoolProfile?.kecamatan ? `Kec. ${schoolProfile.kecamatan}, ` : ''}{schoolProfile?.kota || 'Kota Pasuruan'}, {schoolProfile?.provinsi || 'Jawa Timur'} {schoolProfile?.kodePos || '67116'}
+              </p>
               <p className="text-[11px] font-sans text-slate-600 italic">
-                Jl. Kebonagung, Kec. Purworejo, Kota Pasuruan, Jawa Timur 67116 &bull; Email: sdnkebonagung@pasuruankota.go.id
+                NPSN: {schoolProfile?.npsn || '20535384'} {schoolProfile?.nss ? `• NSS: ${schoolProfile.nss} ` : ''}&bull; Telp TU: {schoolProfile?.teleponKantor || '(0343) 421890'} &bull; Posko Pengaduan TPPK: {schoolProfile?.noTeleponPengaduan || '0812-3456-7890'} &bull; Email: {schoolProfile?.email || 'sdnkebonagung@pasuruankota.go.id'}
               </p>
               <div className="inline-block mt-1 px-3 py-0.5 bg-slate-100 rounded text-[11px] font-sans font-bold uppercase tracking-wider text-slate-800">
                 TIM PENCEGAHAN DAN PENANGANAN KEKERASAN (TPPK) & SISTEM STAR-KIDS
@@ -208,8 +220,8 @@ export const OfficialPrintModal: React.FC<OfficialPrintModalProps> = ({
                   <div className="h-18 flex items-center justify-center">
                     <span className="text-[10px] text-slate-400 italic">[Tanda Tangan & Cap Sekolah]</span>
                   </div>
-                  <p className="font-bold underline">Hj. Sukesi, M.Pd.</p>
-                  <p className="text-[10px] text-slate-500">NIP. 19710314 199605 2 001</p>
+                  <p className="font-bold underline">{effectiveKsName}</p>
+                  <p className="text-[10px] text-slate-500">NIP. {effectiveKsNip || '..............................'}</p>
                 </div>
               </div>
             </div>
@@ -417,10 +429,10 @@ export const OfficialPrintModal: React.FC<OfficialPrintModalProps> = ({
                     (Tanda Tangan & Stempel)
                   </div>
                   <p className="font-bold underline text-slate-900">
-                    Hj. Sukesi, M.Pd.
+                    {effectiveKsName}
                   </p>
                   <p className="text-[11px] text-slate-600">
-                    NIP. 19710314 199605 2 001
+                    NIP. {effectiveKsNip || '..............................'}
                   </p>
                 </div>
               </div>
