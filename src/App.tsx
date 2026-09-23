@@ -13,7 +13,8 @@ import {
   SystemSettings,
   AuditLog,
   AttendanceStatus,
-  Pegawai
+  Pegawai,
+  VisitorLog
 } from './types';
 import { 
   INITIAL_STUDENTS, 
@@ -28,6 +29,8 @@ import {
   DEFAULT_SCHOOL_PROFILE,
   INITIAL_AUDIT_LOGS
 } from './data/initialData';
+import { INITIAL_VISITOR_LOGS } from './data/initialVisitorLogs';
+import { ensureKelas1AComplete, ensureKelas1AAttendance } from './data/kelas1AData';
 import { INITIAL_PEGAWAI } from './data/initialPegawai';
 import { Header, AppTab } from './components/Header';
 import { Footer } from './components/Footer';
@@ -45,10 +48,12 @@ import { SiswaView } from './components/SiswaView';
 import { PegawaiView } from './components/PegawaiView';
 import { SyncExportView } from './components/SyncExportView';
 import { AuditLogView } from './components/AuditLogView';
+import { VisitorLogView } from './components/VisitorLogView';
 import { PengaturanView } from './components/PengaturanView';
 import { OfficialPrintModal } from './components/OfficialPrintModal';
 import { WebProfilView } from './components/WebProfilView';
 import { SimpleLoginView } from './components/SimpleLoginView';
+import { GoogleSheetsModal } from './components/GoogleSheetsModal';
 import { CheckCircle2 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -65,16 +70,24 @@ export const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [isGoogleSheetsModalOpen, setIsGoogleSheetsModalOpen] = useState<boolean>(false);
   const [selectedStudentNisnForProfile, setSelectedStudentNisnForProfile] = useState<string | null>(null);
 
   // Core Data States with LocalStorage Cache
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem('starkids_students');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return ensureKelas1AComplete(parsed);
+        }
+      } catch (e) { /* ignore */ }
     }
-    return INITIAL_STUDENTS;
+    return ensureKelas1AComplete(INITIAL_STUDENTS);
   });
+
+  const [targetKelasAbsensi, setTargetKelasAbsensi] = useState<string>('1A');
 
   const [pelanggaranList, setPelanggaranList] = useState<PelanggaranRecord[]>(() => {
     const saved = localStorage.getItem('starkids_pelanggaran');
@@ -95,9 +108,14 @@ export const App: React.FC = () => {
   const [attendanceList, setAttendanceList] = useState<AttendanceRecord[]>(() => {
     const saved = localStorage.getItem('starkids_attendance');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return ensureKelas1AAttendance(parsed);
+        }
+      } catch (e) { /* ignore */ }
     }
-    return INITIAL_ATTENDANCE;
+    return ensureKelas1AAttendance(INITIAL_ATTENDANCE);
   });
 
   const [masterKelas, setMasterKelas] = useState<MasterKelas[]>(() => {
@@ -179,6 +197,23 @@ export const App: React.FC = () => {
     return INITIAL_PEGAWAI;
   });
 
+  // Visitor Logs State with LocalStorage Persistence
+  const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>(() => {
+    const saved = localStorage.getItem('starkids_visitor_logs');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Gabungkan data historis 7 hari terakhir agar tren visualisasi lengkap
+          const existingIds = new Set(parsed.map((p: any) => p.id));
+          const missingHistory = INITIAL_VISITOR_LOGS.filter(init => !existingIds.has(init.id));
+          return [...parsed, ...missingHistory];
+        }
+      } catch (e) { /* ignore */ }
+    }
+    return INITIAL_VISITOR_LOGS;
+  });
+
   // Dynamic Kepala Sekolah memo for signatures and official documents
   const kepalaSekolah = useMemo(() => {
     // If school profile explicitly provides kepalaSekolahNama, use it
@@ -212,8 +247,112 @@ export const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('starkids_master_reward', JSON.stringify(masterReward)); }, [masterReward]);
   useEffect(() => { localStorage.setItem('starkids_system_settings', JSON.stringify(systemSettings)); }, [systemSettings]);
   useEffect(() => { localStorage.setItem('starkids_audit_logs', JSON.stringify(auditLogs)); }, [auditLogs]);
+  useEffect(() => { localStorage.setItem('starkids_visitor_logs', JSON.stringify(visitorLogs)); }, [visitorLogs]);
   useEffect(() => { localStorage.setItem('starkids_sync_config', JSON.stringify(syncConfig)); }, [syncConfig]);
   useEffect(() => { localStorage.setItem('starkids_pegawai', JSON.stringify(pegawaiList)); }, [pegawaiList]);
+
+  // Otomatis mencatat dan memperbarui sesi pengunjung web saat ini
+  useEffect(() => {
+    try {
+      let sessionId = sessionStorage.getItem('starkids_visitor_session_id');
+      if (!sessionId) {
+        sessionId = `sess_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+        sessionStorage.setItem('starkids_visitor_session_id', sessionId);
+      }
+
+      const ua = navigator.userAgent;
+      const width = window.innerWidth;
+      const deviceType: 'Desktop' | 'Smartphone' | 'Tablet' = 
+        width < 768 ? 'Smartphone' : width < 1024 ? 'Tablet' : 'Desktop';
+
+      let browser = 'Web Browser';
+      if (ua.includes('Edg/')) browser = 'Microsoft Edge';
+      else if (ua.includes('Chrome/')) browser = 'Google Chrome';
+      else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Apple Safari';
+      else if (ua.includes('Firefox/')) browser = 'Mozilla Firefox';
+
+      let os = 'Sistem Operasi';
+      if (ua.includes('Win')) os = 'Windows 11 / 10';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS / iPadOS';
+      else if (ua.includes('Mac')) os = 'macOS';
+      else if (ua.includes('Linux')) os = 'Linux';
+
+      const now = new Date();
+      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+      const tabTitleMap: Record<string, string> = {
+        dashboard: 'Dashboard Utama',
+        absensi: 'Presensi Siswa',
+        pelanggaran: 'Catatan Pelanggaran',
+        reward: 'Prestasi & Reward',
+        poin: 'Poin Karakter',
+        monitoring: 'Monitoring TPPK',
+        profil: 'Profil Siswa',
+        statistik: 'Statistik & Analitik',
+        laporan: 'Pusat Laporan',
+        sync: 'Sinkronisasi Data',
+        siswa: 'Data Siswa & Rombel',
+        pegawai: 'Data Pegawai & Guru',
+        audit: 'Log Aktivitas Sistem',
+        pengaturan: 'Pengaturan Sekolah',
+        webprofil: 'Website Profil Sekolah',
+        pengunjung: 'Log Daftar Pengunjung'
+      };
+
+      const pageName = tabTitleMap[activeTab] || 'Portal Aplikasi';
+      const visitorName = role === 'admin' 
+        ? 'Agung, S.Pd (Admin Khusus TPPK)' 
+        : 'Pengunjung Portal / Wali Murid';
+
+      setVisitorLogs(prev => {
+        const existingIdx = prev.findIndex(v => v.sessionId === sessionId);
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          const existing = updated[existingIdx];
+          const startTime = new Date(existing.timestamp).getTime();
+          const duration = Math.max(1, Math.round((now.getTime() - startTime) / 60000));
+
+          updated[existingIdx] = {
+            ...existing,
+            lastActive: formattedDate,
+            namaPengunjung: visitorName,
+            peran: role === 'admin' ? 'Admin Khusus' : existing.peran,
+            statusAkses: role === 'admin' ? 'Admin Penuh' : existing.statusAkses,
+            halamanTerakhir: pageName,
+            durasiMenit: duration,
+            statusOnline: true,
+            aktivitas: `Mengakses menu ${pageName}`
+          };
+          return updated;
+        } else {
+          const newEntry: VisitorLog = {
+            id: `VIS-${Date.now().toString().slice(-4)}`,
+            sessionId: sessionId!,
+            timestamp: formattedDate,
+            lastActive: formattedDate,
+            namaPengunjung: visitorName,
+            peran: role === 'admin' ? 'Admin Khusus' : 'Orang Tua / Wali Murid',
+            statusAkses: role === 'admin' ? 'Admin Penuh' : 'Publik',
+            ipAddress: '180.252.164.21',
+            lokasi: 'Kota Pasuruan (Jaringan Aktif)',
+            perangkat: deviceType,
+            browser: `${browser} (${width}x${window.innerHeight})`,
+            os,
+            layarResolusi: `${window.screen.width}x${window.screen.height}`,
+            halamanTerakhir: pageName,
+            durasiMenit: 1,
+            statusOnline: true,
+            aktivitas: `Membuka halaman awal ${pageName}`
+          };
+          return [newEntry, ...prev];
+        }
+      });
+    } catch (e) {
+      // ignore
+    }
+  }, [activeTab, role]);
+
 
   // Helper for adding Audit Log
   const addAuditLog = useCallback((action: string, details: string) => {
@@ -231,6 +370,119 @@ export const App: React.FC = () => {
     setAuditLogs(prev => [newLog, ...prev]);
   }, [role]);
 
+  // Visitor Refresh & Sync States
+  const [isRefreshingVisitor, setIsRefreshingVisitor] = useState(false);
+  const [lastVisitorSyncTime, setLastVisitorSyncTime] = useState<string>(() => {
+    return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()) + ' WIB';
+  });
+
+  // Cross-tab / cross-window synchronization for visitor logs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'starkids_visitor_logs' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setVisitorLogs(parsed);
+          }
+        } catch (err) {}
+      }
+    };
+    const handleCustomSync = () => {
+      const saved = localStorage.getItem('starkids_visitor_logs');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setVisitorLogs(parsed);
+          }
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('starkids_visitor_sync', handleCustomSync);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('starkids_visitor_sync', handleCustomSync);
+    };
+  }, []);
+
+  // Handler for clearing visitor logs (Hanya Admin Khusus)
+  const handleClearVisitorLogs = useCallback(() => {
+    const currentSessionId = sessionStorage.getItem('starkids_visitor_session_id');
+    setVisitorLogs(prev => prev.filter(v => v.sessionId === currentSessionId));
+    addAuditLog('Pembersihan Log Pengunjung', 'Administrator khusus membersihkan riwayat daftar pengunjung sistem');
+  }, [addAuditLog]);
+
+  // Handler for refreshing and synchronizing visitor logs
+  const handleRefreshVisitorLogs = useCallback(() => {
+    setIsRefreshingVisitor(true);
+    try {
+      // 1. Ambil data terbaru dari localStorage atau gabungkan initial data 7 hari jika belum ada
+      const saved = localStorage.getItem('starkids_visitor_logs');
+      let currentLogs = visitorLogs;
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const existingIds = new Set(parsed.map((p: any) => p.id));
+            const missingHistory = INITIAL_VISITOR_LOGS.filter(init => !existingIds.has(init.id));
+            currentLogs = [...parsed, ...missingHistory];
+          }
+        } catch (e) {}
+      } else {
+        currentLogs = INITIAL_VISITOR_LOGS;
+      }
+
+      // 2. Perbarui status online untuk sesi aktif saat ini
+      const currentSessionId = sessionStorage.getItem('starkids_visitor_session_id');
+      const now = new Date();
+      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      
+      const updatedLogs = currentLogs.map(item => {
+        if (item.sessionId === currentSessionId) {
+          return {
+            ...item,
+            lastActive: formattedDate,
+            statusOnline: true,
+            peran: role === 'admin' ? 'Admin Khusus' : item.peran,
+            statusAkses: role === 'admin' ? 'Admin Penuh' : item.statusAkses
+          };
+        }
+        return item;
+      });
+
+      setVisitorLogs(updatedLogs);
+      localStorage.setItem('starkids_visitor_logs', JSON.stringify(updatedLogs));
+      
+      const newTime = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()) + ' WIB';
+      setLastVisitorSyncTime(newTime);
+      window.dispatchEvent(new CustomEvent('starkids_visitor_sync'));
+
+      setRefreshToastMessage('Daftar pengunjung web dan analitik 7 hari berhasil disinkronkan.');
+      setTimeout(() => setRefreshToastMessage(null), 3000);
+    } finally {
+      setTimeout(() => setIsRefreshingVisitor(false), 500);
+    }
+  }, [role, visitorLogs]);
+
+  // Handler for adding manual guest / visitor entry (Buku Tamu Digital)
+  const handleAddManualVisitor = useCallback((visitorData: Omit<VisitorLog, 'id' | 'sessionId' | 'timestamp' | 'lastActive' | 'durasiMenit' | 'statusOnline'>) => {
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const newVisitor: VisitorLog = {
+      ...visitorData,
+      id: `VIS-MAN-${Date.now().toString().slice(-4)}`,
+      sessionId: `sess_manual_${Date.now().toString(36)}`,
+      timestamp: formattedDate,
+      lastActive: formattedDate,
+      durasiMenit: 10,
+      statusOnline: false
+    };
+    setVisitorLogs(prev => [newVisitor, ...prev]);
+    addAuditLog('Buku Tamu Digital', `Pencatatan kunjungan tamu baru: ${visitorData.namaPengunjung} (${visitorData.peran})`);
+  }, [addAuditLog]);
+
   // Refresh & Update state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshToastMessage, setRefreshToastMessage] = useState<string | null>(null);
@@ -241,13 +493,65 @@ export const App: React.FC = () => {
   const handleRefreshData = useCallback(() => {
     setIsRefreshing(true);
     try {
+      // 1. Sinkronisasi Data Peserta Didik & Pastikan Kelas 1A Lengkap 28 Siswa
+      let updatedStudents = students;
       const savedStudents = localStorage.getItem('starkids_students');
       if (savedStudents) {
         try {
           const parsed = JSON.parse(savedStudents);
-          if (Array.isArray(parsed) && parsed.length > 0) setStudents(parsed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            updatedStudents = ensureKelas1AComplete(parsed);
+          }
         } catch (e) {}
+      } else {
+        updatedStudents = ensureKelas1AComplete(INITIAL_STUDENTS);
       }
+      setStudents(updatedStudents);
+      localStorage.setItem('starkids_students', JSON.stringify(updatedStudents));
+
+      // 2. Sinkronisasi Data Presensi & Pastikan Presensi Kelas 1A Terisi Seutuhnya
+      let updatedAtt = attendanceList;
+      const savedAtt = localStorage.getItem('starkids_attendance');
+      if (savedAtt) {
+        try {
+          const parsed = JSON.parse(savedAtt);
+          if (Array.isArray(parsed)) {
+            updatedAtt = ensureKelas1AAttendance(parsed);
+          }
+        } catch (e) {}
+      } else {
+        updatedAtt = ensureKelas1AAttendance(INITIAL_ATTENDANCE);
+      }
+      setAttendanceList(updatedAtt);
+      localStorage.setItem('starkids_attendance', JSON.stringify(updatedAtt));
+
+      // 3. Sinkronisasi Data Kepegawaian (Pegawai & Staff)
+      const savedPegawai = localStorage.getItem('starkids_pegawai');
+      if (savedPegawai) {
+        try {
+          const parsed = JSON.parse(savedPegawai);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setPegawaiList(parsed);
+          }
+        } catch (e) {}
+      } else {
+        localStorage.setItem('starkids_pegawai', JSON.stringify(INITIAL_PEGAWAI));
+      }
+
+      // 4. Sinkronisasi Data Guru Kelas & Rombel (Master Kelas)
+      const savedMasterKelas = localStorage.getItem('starkids_master_kelas');
+      if (savedMasterKelas) {
+        try {
+          const parsed = JSON.parse(savedMasterKelas);
+          if (Array.isArray(parsed) && parsed.length >= 28) {
+            setMasterKelas(parsed);
+          }
+        } catch (e) {}
+      } else {
+        localStorage.setItem('starkids_master_kelas', JSON.stringify(MASTER_KELAS));
+      }
+
+      // 5. Sinkronisasi Pelanggaran & Reward
       const savedPelanggaran = localStorage.getItem('starkids_pelanggaran');
       if (savedPelanggaran) {
         try {
@@ -262,34 +566,40 @@ export const App: React.FC = () => {
           if (Array.isArray(parsed)) setRewardList(parsed);
         } catch (e) {}
       }
-      const savedAtt = localStorage.getItem('starkids_attendance');
-      if (savedAtt) {
-        try {
-          const parsed = JSON.parse(savedAtt);
-          if (Array.isArray(parsed)) setAttendanceList(parsed);
-        } catch (e) {}
-      }
+
+      // 6. Sinkronisasi Profil Sekolah & Pengaturan Sistem
       const savedSettings = localStorage.getItem('starkids_system_settings');
       if (savedSettings) {
         try {
           const parsed = JSON.parse(savedSettings);
           if (parsed && typeof parsed === 'object') setSystemSettings(parsed);
         } catch (e) {}
+      } else {
+        localStorage.setItem('starkids_system_settings', JSON.stringify(DEFAULT_SYSTEM_SETTINGS));
       }
 
-      const nowStr = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()) + ' WIB';
+      const now = new Date();
+      const nowStr = new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(now) + ' WIB';
+
       setLastUpdatedTime(nowStr);
-      setRefreshToastMessage(`Data sistem berhasil dimuat ulang & diperbarui (${nowStr})`);
+      setRefreshToastMessage(`Seluruh lini data (Kepegawaian, Guru Kelas, Peserta Didik Kelas 1A-6E, Profil Sekolah, & Presensi) berhasil disinkronkan & tersimpan realtime (${nowStr})`);
       setTimeout(() => {
         setRefreshToastMessage(null);
-      }, 3500);
-      addAuditLog('Refresh Data', 'Pembaruan dan sinkronisasi data sistem');
+      }, 4500);
+      addAuditLog('Refresh Data Realtime', 'Pembaruan otomatis seluruh lini data sistem dan penyimpanan permanen');
     } finally {
       setTimeout(() => {
         setIsRefreshing(false);
       }, 400);
     }
-  }, [addAuditLog]);
+  }, [students, attendanceList, addAuditLog]);
 
   // Recalculate Student totals automatically when violations or rewards change
   const refreshStudentStats = useCallback((
@@ -358,6 +668,32 @@ export const App: React.FC = () => {
     addAuditLog('Hapus Pelanggaran', `Menghapus data pelanggaran ${target?.namaSiswa || id}`);
   };
 
+  const handleBatchDeletePelanggaran = (ids: string[]) => {
+    const idSet = new Set(ids);
+    const nextList = pelanggaranList.filter(item => !idSet.has(item.id));
+    setPelanggaranList(nextList);
+    refreshStudentStats(nextList, rewardList);
+    addAuditLog('Hapus Sebagian Pelanggaran', `Menghapus secara bersamaan ${ids.length} catatan poin pelanggaran`);
+    setRefreshToastMessage(`Berhasil menghapus ${ids.length} catatan pelanggaran.`);
+    setTimeout(() => setRefreshToastMessage(null), 5000);
+  };
+
+  const handleDeleteAllPelanggaran = (kelas?: string) => {
+    let nextList: PelanggaranRecord[] = [];
+    if (kelas && kelas !== 'all') {
+      const removedCount = pelanggaranList.filter(p => p.kelas === kelas).length;
+      nextList = pelanggaranList.filter(p => p.kelas !== kelas);
+      addAuditLog('Hapus Seluruh Pelanggaran Kelas', `Menghapus seluruh catatan pelanggaran (${removedCount} data) di Kelas ${kelas}`);
+      setRefreshToastMessage(`Berhasil menghapus seluruh data pelanggaran Kelas ${kelas}.`);
+    } else {
+      addAuditLog('Hapus Seluruh Pelanggaran', `Menghapus seluruh catatan pelanggaran sekolah (${pelanggaranList.length} data)`);
+      setRefreshToastMessage('Seluruh catatan pelanggaran berhasil dihapus.');
+    }
+    setPelanggaranList(nextList);
+    refreshStudentStats(nextList, rewardList);
+    setTimeout(() => setRefreshToastMessage(null), 5000);
+  };
+
   // CRUD Reward Handlers
   const handleAddReward = (newRecord: Omit<RewardRecord, 'id'>) => {
     const id = `REW-${Date.now().toString().slice(-4)}`;
@@ -393,6 +729,32 @@ export const App: React.FC = () => {
     setRewardList(nextList);
     refreshStudentStats(pelanggaranList, nextList);
     addAuditLog('Hapus Reward', `Menghapus apresiasi ${target?.namaSiswa || id}`);
+  };
+
+  const handleBatchDeleteReward = (ids: string[]) => {
+    const idSet = new Set(ids);
+    const nextList = rewardList.filter(item => !idSet.has(item.id));
+    setRewardList(nextList);
+    refreshStudentStats(pelanggaranList, nextList);
+    addAuditLog('Hapus Sebagian Prestasi', `Menghapus secara bersamaan ${ids.length} data prestasi / reward`);
+    setRefreshToastMessage(`Berhasil menghapus ${ids.length} data prestasi.`);
+    setTimeout(() => setRefreshToastMessage(null), 5000);
+  };
+
+  const handleDeleteAllReward = (kelas?: string) => {
+    let nextList: RewardRecord[] = [];
+    if (kelas && kelas !== 'all') {
+      const removedCount = rewardList.filter(r => r.kelas === kelas).length;
+      nextList = rewardList.filter(r => r.kelas !== kelas);
+      addAuditLog('Hapus Seluruh Prestasi Kelas', `Menghapus seluruh data prestasi (${removedCount} data) di Kelas ${kelas}`);
+      setRefreshToastMessage(`Berhasil menghapus seluruh data prestasi Kelas ${kelas}.`);
+    } else {
+      addAuditLog('Hapus Seluruh Prestasi', `Menghapus seluruh data prestasi/reward sekolah (${rewardList.length} data)`);
+      setRefreshToastMessage('Seluruh data prestasi/reward berhasil dihapus.');
+    }
+    setRewardList(nextList);
+    refreshStudentStats(pelanggaranList, nextList);
+    setTimeout(() => setRefreshToastMessage(null), 5000);
   };
 
   // Attendance Handlers
@@ -468,6 +830,52 @@ export const App: React.FC = () => {
     addAuditLog('Hapus Siswa', `Menghapus siswa ${target?.namaLengkap || nisn} berserta seluruh riwayatnya`);
   };
 
+  const handleBatchDeleteStudents = (nisns: string[]) => {
+    const nisnSet = new Set(nisns);
+    setStudents(prev => prev.filter(s => !nisnSet.has(s.nisn)));
+    setPelanggaranList(prev => prev.filter(p => !nisnSet.has(p.nisn)));
+    setRewardList(prev => prev.filter(r => !nisnSet.has(r.nisn)));
+    setAttendanceList(prev => prev.filter(a => !nisnSet.has(a.nisn)));
+    addAuditLog('Hapus Sebagian Siswa', `Menghapus secara bersamaan ${nisns.length} data siswa terpilih beserta riwayatnya`);
+    setRefreshToastMessage(`Berhasil menghapus ${nisns.length} data siswa terpilih.`);
+    setTimeout(() => setRefreshToastMessage(null), 5000);
+  };
+
+  const handleDeleteAllStudentsInKelas = (kelas: string) => {
+    if (kelas === 'all') {
+      const count = students.length;
+      setStudents([]);
+      setPelanggaranList([]);
+      setRewardList([]);
+      setAttendanceList([]);
+      addAuditLog('Hapus Seluruh Siswa', `Menghapus seluruh (${count}) data siswa sekolah`);
+      setRefreshToastMessage('Seluruh data siswa sekolah berhasil dihapus.');
+    } else {
+      const targetStudents = students.filter(s => s.kelas === kelas);
+      const targetNisns = new Set(targetStudents.map(s => s.nisn));
+      setStudents(prev => prev.filter(s => s.kelas !== kelas));
+      setPelanggaranList(prev => prev.filter(p => !targetNisns.has(p.nisn)));
+      setRewardList(prev => prev.filter(r => !targetNisns.has(r.nisn)));
+      setAttendanceList(prev => prev.filter(a => !targetNisns.has(a.nisn)));
+      addAuditLog('Hapus Seluruh Siswa Kelas', `Menghapus seluruh siswa (${targetStudents.length} siswa) di Kelas ${kelas}`);
+      setRefreshToastMessage(`Berhasil menghapus seluruh data siswa di Kelas ${kelas}.`);
+    }
+    setTimeout(() => setRefreshToastMessage(null), 5000);
+  };
+
+  const handleBatchUpdateStudents = (nisns: string[], updates: Partial<Student>) => {
+    const nisnSet = new Set(nisns);
+    setStudents(prev => prev.map(s => {
+      if (nisnSet.has(s.nisn)) {
+        return { ...s, ...updates };
+      }
+      return s;
+    }));
+    addAuditLog('Tandai / Update Masal Siswa', `Menandai/memperbarui ${nisns.length} data siswa secara bersamaan`);
+    setRefreshToastMessage(`Berhasil memperbarui ${nisns.length} siswa terpilih.`);
+    setTimeout(() => setRefreshToastMessage(null), 5000);
+  };
+
   const handleImportStudents = (newStudents: Student[]) => {
     setStudents(prev => {
       const existingNisns = new Set(prev.map(s => s.nisn));
@@ -475,6 +883,45 @@ export const App: React.FC = () => {
       return [...filteredNew, ...prev];
     });
     addAuditLog('Import Siswa', `Mengimpor ${newStudents.length} data siswa dari spreadsheet`);
+  };
+
+  const handleImportStudentsFromSheets = (imported: Partial<Student>[]) => {
+    setStudents(prev => {
+      const updated = [...prev];
+      imported.forEach(imp => {
+        if (!imp.nisn) return;
+        const idx = updated.findIndex(s => s.nisn === imp.nisn);
+        if (idx >= 0) {
+          updated[idx] = {
+            ...updated[idx],
+            namaLengkap: imp.namaLengkap || updated[idx].namaLengkap,
+            jenisKelamin: imp.jenisKelamin || updated[idx].jenisKelamin,
+            kelas: imp.kelas || updated[idx].kelas,
+            waliKelas: imp.waliKelas || updated[idx].waliKelas,
+            namaOrangTua: imp.namaOrangTua || updated[idx].namaOrangTua,
+            noHpOrangTua: imp.noHpOrangTua || updated[idx].noHpOrangTua
+          };
+        } else {
+          updated.push({
+            nisn: imp.nisn,
+            namaLengkap: imp.namaLengkap || 'Siswa Baru',
+            jenisKelamin: imp.jenisKelamin || 'L',
+            kelas: imp.kelas || '1A',
+            waliKelas: imp.waliKelas || '',
+            namaOrangTua: imp.namaOrangTua || '',
+            noHpOrangTua: imp.noHpOrangTua || '',
+            totalPoinPelanggaran: imp.totalPoinPelanggaran || 0,
+            totalPoinReward: imp.totalPoinReward || 0,
+            statusResiko: imp.statusResiko || 'Aman'
+          });
+        }
+      });
+      localStorage.setItem('starkids_students', JSON.stringify(updated));
+      return updated;
+    });
+    setRefreshToastMessage(`Berhasil menyelaraskan ${imported.length} data siswa dari Google Sheets!`);
+    setTimeout(() => setRefreshToastMessage(null), 5000);
+    addAuditLog('Impor Google Sheets', `Menyelaraskan ${imported.length} siswa dari Google Sheets`);
   };
 
   // Pegawai CRUD and Sync Handlers
@@ -711,6 +1158,12 @@ export const App: React.FC = () => {
     setActiveTab('profil');
   };
 
+  // Navigation to specific class attendance directly
+  const handleNavigateToAbsensiKelas = (kelas: string) => {
+    setTargetKelasAbsensi(kelas);
+    setActiveTab('absensi');
+  };
+
   // Logout handler returning user to the simple login screen
   const handleLogout = () => {
     setIsLoggedIn(false);
@@ -764,6 +1217,7 @@ export const App: React.FC = () => {
         tahunAjaran={systemSettings.tahunAjaran}
         onRefreshData={handleRefreshData}
         isRefreshing={isRefreshing}
+        onOpenGoogleSheets={() => setIsGoogleSheetsModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -785,6 +1239,7 @@ export const App: React.FC = () => {
               setActiveTab(tab);
             }}
             onSelectStudent={handleNavigateToStudentProfile}
+            onNavigateToAbsensiKelas={handleNavigateToAbsensiKelas}
             masterKelas={masterKelas}
             schoolProfile={systemSettings.schoolProfile}
             onRefreshData={handleRefreshData}
@@ -796,6 +1251,7 @@ export const App: React.FC = () => {
         {/* VIEW 2: ABSENSI SISWA */}
         {activeTab === 'absensi' && (
           <AbsensiView
+            initialKelas={targetKelasAbsensi}
             students={students}
             attendanceList={attendanceList}
             masterKelas={masterKelas}
@@ -803,6 +1259,8 @@ export const App: React.FC = () => {
             role={role}
             onSaveAttendance={handleSaveBatchAttendance}
             onSelectStudentProfile={handleNavigateToStudentProfile}
+            onRefreshData={handleRefreshData}
+            isRefreshing={isRefreshing}
             onNavigate={(tab) => {
               if ((tab === 'siswa' || tab === 'audit' || tab === 'pengaturan') && role !== 'admin') {
                 setIsLoginModalOpen(true);
@@ -822,6 +1280,8 @@ export const App: React.FC = () => {
             onAddPelanggaran={handleAddPelanggaran}
             onUpdatePelanggaran={handleUpdatePelanggaran}
             onDeletePelanggaran={handleDeletePelanggaran}
+            onBatchDeletePelanggaran={handleBatchDeletePelanggaran}
+            onDeleteAllPelanggaran={handleDeleteAllPelanggaran}
             onPrintSurat={handlePrintSuratPanggilan}
           />
         )}
@@ -835,6 +1295,8 @@ export const App: React.FC = () => {
             onAddReward={handleAddReward}
             onUpdateReward={handleUpdateReward}
             onDeleteReward={handleDeleteReward}
+            onBatchDeleteReward={handleBatchDeleteReward}
+            onDeleteAllReward={handleDeleteAllReward}
           />
         )}
 
@@ -913,11 +1375,12 @@ export const App: React.FC = () => {
             onUpdateSyncConfig={(updated) => setSyncConfig(prev => ({ ...prev, ...updated }))}
             onTriggerSync={handleTriggerSync}
             onImportStudents={handleImportStudents}
+            onOpenGoogleSheets={() => setIsGoogleSheetsModalOpen(true)}
           />
         )}
 
-        {/* VIEW 11: DATA SISWA (Hanya Admin) */}
-        {activeTab === 'siswa' && role === 'admin' && (
+        {/* VIEW 11: DATA SISWA & KELAS */}
+        {activeTab === 'siswa' && (
           <SiswaView
             students={students}
             pelanggaranList={pelanggaranList}
@@ -927,6 +1390,9 @@ export const App: React.FC = () => {
             onBatchAddStudents={handleImportStudents}
             onUpdateStudent={handleUpdateStudent}
             onDeleteStudent={handleDeleteStudent}
+            onBatchDeleteStudents={handleBatchDeleteStudents}
+            onDeleteAllStudentsInKelas={handleDeleteAllStudentsInKelas}
+            onBatchUpdateStudents={handleBatchUpdateStudents}
             onPrintStudentReport={handlePrintRekapKarakter}
           />
         )}
@@ -994,6 +1460,21 @@ export const App: React.FC = () => {
            />
          )}
 
+        {/* VIEW 16: LOG SISTEM DAFTAR PENGUNJUNG (Khusus Admin) */}
+        {activeTab === 'pengunjung' && (
+          <VisitorLogView
+            visitorLogs={visitorLogs}
+            role={role}
+            onClearLogs={handleClearVisitorLogs}
+            onRefreshLogs={handleRefreshVisitorLogs}
+            onAddManualVisitor={handleAddManualVisitor}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
+            schoolProfile={systemSettings.schoolProfile}
+            isRefreshing={isRefreshingVisitor}
+            lastSyncTime={lastVisitorSyncTime}
+          />
+        )}
+
       </main>
 
       {/* Real-time Refresh Toast Notification */}
@@ -1019,6 +1500,24 @@ export const App: React.FC = () => {
         onLogin={(newRole: UserRole) => setRole(newRole)}
         expectedPassword={systemSettings.adminPassword}
         schoolProfile={systemSettings.schoolProfile}
+      />
+
+      <GoogleSheetsModal
+        isOpen={isGoogleSheetsModalOpen}
+        onClose={() => setIsGoogleSheetsModalOpen(false)}
+        schoolProfile={systemSettings.schoolProfile}
+        students={students}
+        attendanceList={attendanceList}
+        pegawaiList={pegawaiList}
+        masterKelas={masterKelas}
+        pelanggaranList={pelanggaranList}
+        rewardList={rewardList}
+        onImportStudents={handleImportStudentsFromSheets}
+        onAuditLog={(action, details) => addAuditLog(action, details)}
+        onToastMessage={(msg) => {
+          setRefreshToastMessage(msg);
+          setTimeout(() => setRefreshToastMessage(null), 5000);
+        }}
       />
 
       <OfficialPrintModal

@@ -26,7 +26,8 @@ import {
   BarChart3,
   ClipboardList,
   Sparkles,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { StatistikKehadiranView } from './StatistikKehadiranView';
@@ -43,6 +44,9 @@ interface AbsensiViewProps {
   onSelectStudentProfile?: (student: Student) => void;
   onNavigate?: (tab: string) => void;
   initialSubTab?: 'input' | 'rekap' | 'statistik' | 'monitoring';
+  initialKelas?: string;
+  onRefreshData?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const AbsensiView: React.FC<AbsensiViewProps> = ({
@@ -54,7 +58,10 @@ export const AbsensiView: React.FC<AbsensiViewProps> = ({
   onSaveAttendance,
   onSelectStudentProfile,
   onNavigate,
-  initialSubTab = 'input'
+  initialSubTab = 'input',
+  initialKelas = '1A',
+  onRefreshData,
+  isRefreshing = false
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'input' | 'rekap' | 'statistik' | 'monitoring'>(initialSubTab);
 
@@ -67,33 +74,57 @@ export const AbsensiView: React.FC<AbsensiViewProps> = ({
 
   // --- SUBTAB 1: INPUT PRESENSI HARIAN ---
   const [inputTanggal, setInputTanggal] = useState<string>('2026-09-18');
-  const [inputKelas, setInputKelas] = useState<string>('5A');
+  const [inputKelas, setInputKelas] = useState<string>(() => initialKelas || '1A');
+  const [studentSearchQuery, setStudentSearchQuery] = useState<string>('');
   const [tempAttendanceMap, setTempAttendanceMap] = useState<Record<string, { status: AttendanceStatus; keterangan: string }>>({});
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
   const [overwriteConfirmOpen, setOverwriteConfirmOpen] = useState<boolean>(false);
   const [isReadOnlyPreview, setIsReadOnlyPreview] = useState<boolean>(false);
+
+  // Sync initialKelas when changed externally (e.g. from Dashboard click on Kelas 1A)
+  React.useEffect(() => {
+    if (initialKelas) {
+      setInputKelas(initialKelas);
+    }
+  }, [initialKelas]);
+
+  // Normalize class string to handle variations like "1A", "Kelas 1A", "1-A"
+  const normalizeKelas = (k: string) => (k || '').replace(/kelas\s*/i, '').replace(/[-\s]/g, '').trim().toUpperCase();
 
   // Print Modal state for Rekap
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
 
   // Selected class info
   const selectedKelasInfo = useMemo(() => {
-    return masterKelas.find(k => k.kelas === inputKelas) || {
+    const target = normalizeKelas(inputKelas);
+    return masterKelas.find(k => normalizeKelas(k.kelas) === target) || {
       kelas: inputKelas,
-      waliKelas: 'Guru Kelas SDN Kebonagung',
-      nipWaliKelas: '19850101 201001 1 001',
+      waliKelas: target === '1A' ? 'Siti Rahmawati, S.Pd.' : 'Guru Kelas SDN Kebonagung',
+      nipWaliKelas: target === '1A' ? '19840512 200902 2 006' : '19850101 201001 1 001',
       tahunAjaran: systemSettings.tahunAjaran
     };
   }, [masterKelas, inputKelas, systemSettings.tahunAjaran]);
 
   // Students in selected class
   const classStudents = useMemo(() => {
-    return students.filter(s => s.kelas === inputKelas);
+    const target = normalizeKelas(inputKelas);
+    return students.filter(s => normalizeKelas(s.kelas) === target);
   }, [students, inputKelas]);
+
+  // Filtered students based on search input
+  const filteredClassStudents = useMemo(() => {
+    if (!studentSearchQuery.trim()) return classStudents;
+    const q = studentSearchQuery.toLowerCase().trim();
+    return classStudents.filter(s => 
+      s.namaLengkap.toLowerCase().includes(q) ||
+      s.nisn.includes(q)
+    );
+  }, [classStudents, studentSearchQuery]);
 
   // Check if data already exists for selected date and class (Anti-duplikasi check)
   const existingRecordsForClassDate = useMemo(() => {
-    return attendanceList.filter(a => a.tanggal === inputTanggal && a.kelas === inputKelas);
+    const target = normalizeKelas(inputKelas);
+    return attendanceList.filter(a => a.tanggal === inputTanggal && normalizeKelas(a.kelas) === target);
   }, [attendanceList, inputTanggal, inputKelas]);
 
   // Load existing records or set default 'Hadir' when date or class changes
@@ -227,7 +258,7 @@ export const AbsensiView: React.FC<AbsensiViewProps> = ({
   // Calculate student attendance totals
   const studentRekapStats = useMemo(() => {
     return students
-      .filter(s => rekapKelas === 'ALL' || s.kelas === rekapKelas)
+      .filter(s => rekapKelas === 'ALL' || normalizeKelas(s.kelas) === normalizeKelas(rekapKelas))
       .filter(s => {
         if (!rekapSearch.trim()) return true;
         const q = rekapSearch.toLowerCase();
@@ -623,31 +654,78 @@ export const AbsensiView: React.FC<AbsensiViewProps> = ({
 
               {/* Action Bar Above Table */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-                  <span>Jumlah Siswa Terdaftar: <strong className="text-slate-900">{classStudents.length} Siswa</strong></span>
-                  <span>&bull;</span>
-                  <span className="text-emerald-700 font-bold">Status Default: 🟢 HADIR</span>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 font-semibold">
+                  <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <Users className="w-4 h-4 text-blue-700" />
+                    <span>Total Siswa Rombel: <strong className="text-slate-900 font-black">{classStudents.length} Siswa</strong></span>
+                  </div>
+                  <span className="hidden sm:inline text-slate-300">&bull;</span>
+                  <div className="flex items-center gap-1.5 text-emerald-800 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                    <span>Default: Hadir</span>
+                  </div>
+                  {studentSearchQuery && (
+                    <span className="text-blue-700 font-bold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                      Menampilkan: {filteredClassStudents.length} dari {classStudents.length} Siswa
+                    </span>
+                  )}
                 </div>
 
-                {role === 'admin' && !isReadOnlyPreview && (
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Search box for students in class */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Cari nama atau NISN..."
+                      value={studentSearchQuery}
+                      onChange={(e) => setStudentSearchQuery(e.target.value)}
+                      className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white w-44 sm:w-56"
+                    />
+                    {studentSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setStudentSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[10px] font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {onRefreshData && (
                     <button
                       type="button"
-                      onClick={handleSetAllHadir}
-                      className="px-3.5 py-1.5 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      onClick={onRefreshData}
+                      disabled={isRefreshing}
+                      title="Perbarui & Sinkronkan Data Realtime"
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Set Semua Hadir</span>
+                      <RefreshCw className={`w-3.5 h-3.5 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <span className="hidden md:inline">Update Data</span>
                     </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-                    >
-                      <Save className="w-3.5 h-3.5" />
-                      <span>SIMPAN ABSENSI KELAS {inputKelas}</span>
-                    </button>
-                  </div>
-                )}
+                  )}
+
+                  {role === 'admin' && !isReadOnlyPreview && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleSetAllHadir}
+                        className="px-3 py-1.5 rounded-xl border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Set Semua Hadir</span>
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>SIMPAN ABSENSI KELAS {inputKelas}</span>
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Student Attendance Table */}
@@ -658,64 +736,113 @@ export const AbsensiView: React.FC<AbsensiViewProps> = ({
                       <th className="py-3 px-3 w-12 text-center">No</th>
                       <th className="py-3 px-4 w-28">NISN</th>
                       <th className="py-3 px-4">Nama Lengkap Siswa</th>
-                      <th className="py-3 px-3 text-center w-20">L/P</th>
-                      <th className="py-3 px-4 min-w-[360px]">Status Kehadiran</th>
+                      <th className="py-3 px-3 text-center w-16">L/P</th>
+                      <th className="py-3 px-4 min-w-[380px]">Status Kehadiran</th>
                       <th className="py-3 px-4 min-w-[260px]">Keterangan</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 font-medium">
                     {classStudents.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-10 text-center text-slate-400 font-bold">
-                          Belum ada siswa terdaftar di Kelas {inputKelas}.
+                        <td colSpan={6} className="py-12 text-center">
+                          <div className="max-w-md mx-auto space-y-3">
+                            <Users className="w-10 h-10 text-slate-300 mx-auto" />
+                            <p className="text-slate-800 font-extrabold text-sm">
+                              Belum ada siswa terdaftar di Kelas {inputKelas}.
+                            </p>
+                            <p className="text-slate-500 text-xs">
+                              Data siswa untuk kelas ini dapat dimuat ulang dan disinkronkan secara otomatis.
+                            </p>
+                            {onRefreshData && (
+                              <button
+                                type="button"
+                                onClick={onRefreshData}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                                <span>Muat Ulang Data Siswa Kelas {inputKelas}</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredClassStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-slate-500 font-medium">
+                          Tidak ada siswa yang cocok dengan pencarian "{studentSearchQuery}".
                         </td>
                       </tr>
                     ) : (
-                      classStudents.map((st, idx) => {
+                      filteredClassStudents.map((st, idx) => {
                         const currentVal = tempAttendanceMap[st.nisn] || { status: 'Hadir', keterangan: '' };
                         return (
                           <tr key={st.nisn} className="hover:bg-slate-50/80 transition-colors">
                             <td className="py-3 px-3 text-center text-slate-500 font-bold">{idx + 1}</td>
-                            <td className="py-3 px-4 font-mono text-slate-600 font-bold">{st.nisn}</td>
                             <td className="py-3 px-4">
-                              <span 
-                                onClick={() => onSelectStudentProfile?.(st)}
-                                className="font-extrabold text-slate-900 hover:text-blue-700 cursor-pointer"
-                              >
-                                {st.namaLengkap}
+                              <span className="font-mono text-slate-700 font-bold bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[11px]">
+                                {st.nisn}
                               </span>
                             </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  type="button"
+                                  onClick={() => onSelectStudentProfile?.(st)}
+                                  className="font-extrabold text-slate-900 hover:text-blue-700 text-left cursor-pointer transition-colors"
+                                >
+                                  {st.namaLengkap}
+                                </button>
+                                {(st.statusResiko === 'Waspada' || st.statusResiko === 'Berisiko') && (
+                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black border ${
+                                    st.statusResiko === 'Berisiko' 
+                                      ? 'bg-rose-100 text-rose-900 border-rose-200' 
+                                      : 'bg-amber-100 text-amber-900 border-amber-200'
+                                  }`}>
+                                    {st.statusResiko}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-600 font-medium mt-0.5">
+                                Orang Tua/Wali: {st.namaOrangTua || '-'}
+                              </div>
+                            </td>
                             <td className="py-3 px-3 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                                st.jenisKelamin === 'L' ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${
+                                st.jenisKelamin === 'L' 
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                  : 'bg-pink-50 text-pink-700 border-pink-200'
                               }`}>
                                 {st.jenisKelamin}
                               </span>
                             </td>
                             <td className="py-3 px-4">
-                              {/* STATUS COLOR BUTTONS (Section 3: 🟢 🟡 🔵 🔴 🟣) */}
+                              {/* STATUS COLOR BUTTONS WITH CRISP TEXT & COLORED DOTS */}
                               <div className="flex flex-wrap items-center gap-1.5">
                                 {[
-                                  { label: '🟢 HADIR', val: 'Hadir' as AttendanceStatus, activeBg: 'bg-emerald-600 text-white border-emerald-600 shadow-xs' },
-                                  { label: '🟡 SAKIT', val: 'Sakit' as AttendanceStatus, activeBg: 'bg-amber-500 text-white border-amber-500 shadow-xs' },
-                                  { label: '🔵 IZIN', val: 'Izin' as AttendanceStatus, activeBg: 'bg-blue-600 text-white border-blue-600 shadow-xs' },
-                                  { label: '🔴 ALPA', val: 'Alpa' as AttendanceStatus, activeBg: 'bg-rose-600 text-white border-rose-600 shadow-xs' },
-                                  { label: '🟣 DISPENSASI', val: 'Dispensasi' as AttendanceStatus, activeBg: 'bg-purple-600 text-white border-purple-600 shadow-xs' },
-                                ].map((opt) => (
-                                  <button
-                                    type="button"
-                                    key={opt.val}
-                                    disabled={role !== 'admin' || isReadOnlyPreview}
-                                    onClick={() => handleStatusChange(st.nisn, opt.val)}
-                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-black border transition-all cursor-pointer ${
-                                      currentVal.status === opt.val
-                                        ? opt.activeBg
-                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                                    }`}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                ))}
+                                  { label: 'Hadir', val: 'Hadir' as AttendanceStatus, dot: 'bg-emerald-500', activeBg: 'bg-emerald-600 text-white border-emerald-600 shadow-xs' },
+                                  { label: 'Sakit', val: 'Sakit' as AttendanceStatus, dot: 'bg-amber-500', activeBg: 'bg-amber-500 text-white border-amber-500 shadow-xs' },
+                                  { label: 'Izin', val: 'Izin' as AttendanceStatus, dot: 'bg-blue-500', activeBg: 'bg-blue-600 text-white border-blue-600 shadow-xs' },
+                                  { label: 'Alpa', val: 'Alpa' as AttendanceStatus, dot: 'bg-rose-500', activeBg: 'bg-rose-600 text-white border-rose-600 shadow-xs' },
+                                  { label: 'Dispensasi', val: 'Dispensasi' as AttendanceStatus, dot: 'bg-purple-500', activeBg: 'bg-purple-600 text-white border-purple-600 shadow-xs' },
+                                ].map((opt) => {
+                                  const isCurrent = currentVal.status === opt.val;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={opt.val}
+                                      disabled={role !== 'admin' || isReadOnlyPreview}
+                                      onClick={() => handleStatusChange(st.nisn, opt.val)}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border transition-all cursor-pointer ${
+                                        isCurrent
+                                          ? opt.activeBg
+                                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                      }`}
+                                    >
+                                      <span className={`w-2 h-2 rounded-full shrink-0 ${isCurrent ? 'bg-white' : opt.dot}`} />
+                                      <span>{opt.label}</span>
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </td>
                             <td className="py-3 px-4">

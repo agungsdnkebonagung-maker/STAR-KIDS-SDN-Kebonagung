@@ -183,6 +183,16 @@ export interface CanvaSyncConfig {
   totalSyncedCount: number;
 }
 
+export interface GoogleSheetsSyncConfig {
+  spreadsheetId: string;
+  spreadsheetUrl: string;
+  spreadsheetTitle: string;
+  lastSyncTime: string | null;
+  status: 'idle' | 'syncing' | 'success' | 'error';
+  lastMessage?: string;
+  autoSync: boolean;
+}
+
 export type KategoriPegawai = 
   | 'kepala_sekolah' 
   | 'wali_kelas' 
@@ -211,5 +221,33 @@ export interface Pegawai {
   statusAktif: boolean;
   fotoUrl?: string;
   catatan?: string;
+}
+
+export type VisitorRole = 
+  | 'Admin Khusus' 
+  | 'Kepala Sekolah' 
+  | 'Guru / Wali Kelas' 
+  | 'Orang Tua / Wali Murid' 
+  | 'Pengawas / Dinas' 
+  | 'Tamu Pengunjung';
+
+export interface VisitorLog {
+  id: string;
+  sessionId: string;
+  timestamp: string; // YYYY-MM-DD HH:mm:ss
+  lastActive: string; // YYYY-MM-DD HH:mm:ss
+  namaPengunjung: string;
+  peran: VisitorRole;
+  statusAkses: 'Admin Penuh' | 'Akses Terbatas' | 'Publik';
+  ipAddress: string;
+  lokasi: string;
+  perangkat: 'Desktop' | 'Smartphone' | 'Tablet';
+  browser: string;
+  os: string;
+  layarResolusi?: string;
+  halamanTerakhir: string;
+  durasiMenit: number;
+  statusOnline: boolean;
+  aktivitas: string;
 }
 

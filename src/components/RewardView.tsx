@@ -21,7 +21,11 @@ import {
   Heart,
   Medal,
   X,
-  FileBadge
+  FileBadge,
+  ListChecks,
+  CheckSquare,
+  Tag,
+  AlertTriangle
 } from 'lucide-react';
 
 interface RewardViewProps {
@@ -31,6 +35,8 @@ interface RewardViewProps {
   onAddReward: (reward: Omit<RewardRecord, 'id'>) => void;
   onUpdateReward: (id: string, updated: Partial<RewardRecord>) => void;
   onDeleteReward: (id: string) => void;
+  onBatchDeleteReward?: (ids: string[]) => void;
+  onDeleteAllReward?: (kelas?: string) => void;
 }
 
 export const RewardView: React.FC<RewardViewProps> = ({
@@ -39,11 +45,19 @@ export const RewardView: React.FC<RewardViewProps> = ({
   role,
   onAddReward,
   onUpdateReward,
-  onDeleteReward
+  onDeleteReward,
+  onBatchDeleteReward,
+  onDeleteAllReward
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterKelas, setFilterKelas] = useState('all');
   const [filterKategori, setFilterKategori] = useState<'all' | KategoriReward>('all');
+
+  // Selection & Batch Delete States
+  const [selectedRewardIds, setSelectedRewardIds] = useState<string[]>([]);
+  const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false);
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+  const [batchActionNotice, setBatchActionNotice] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,6 +186,74 @@ export const RewardView: React.FC<RewardViewProps> = ({
     });
   }, [rewardList, searchTerm, filterKelas, filterKategori]);
 
+  const selectedRewardsSet = useMemo(() => new Set(selectedRewardIds), [selectedRewardIds]);
+
+  const selectedRewards = useMemo(() => {
+    return rewardList.filter(item => selectedRewardsSet.has(item.id));
+  }, [rewardList, selectedRewardsSet]);
+
+  const handleToggleSelectReward = (id: string) => {
+    setSelectedRewardIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllFilteredRewards = () => {
+    const allFilteredIds = filteredList.map(item => item.id);
+    const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedRewardsSet.has(id));
+
+    if (allSelected) {
+      setSelectedRewardIds(prev => prev.filter(id => !allFilteredIds.includes(id)));
+    } else {
+      const union = new Set([...selectedRewardIds, ...allFilteredIds]);
+      setSelectedRewardIds(Array.from(union));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRewardIds([]);
+  };
+
+  const handleConfirmBatchDelete = () => {
+    if (selectedRewardIds.length === 0) return;
+    const count = selectedRewardIds.length;
+
+    if (onBatchDeleteReward) {
+      onBatchDeleteReward(selectedRewardIds);
+    } else {
+      selectedRewardIds.forEach(id => onDeleteReward(id));
+    }
+
+    setSelectedRewardIds([]);
+    setIsBatchDeleteModalOpen(false);
+    setBatchActionNotice(`Berhasil menghapus sebagian (${count} catatan prestasi terpilih). Saldo karakter siswa otomatis dikalkulasi ulang.`);
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
+
+  const handleConfirmDeleteAll = () => {
+    const targetCount = filterKelas === 'all' 
+      ? rewardList.length 
+      : rewardList.filter(r => r.kelas === filterKelas).length;
+
+    if (onDeleteAllReward) {
+      onDeleteAllReward(filterKelas);
+    } else {
+      const targets = filterKelas === 'all' 
+        ? rewardList 
+        : rewardList.filter(r => r.kelas === filterKelas);
+      targets.forEach(r => onDeleteReward(r.id));
+    }
+
+    setSelectedRewardIds([]);
+    setIsDeleteAllModalOpen(false);
+    setBatchActionNotice(
+      filterKelas === 'all'
+        ? `Berhasil menghapus seluruh data reward/prestasi sekolah (${targetCount} catatan).`
+        : `Berhasil menghapus seluruh data reward/prestasi Kelas ${filterKelas} (${targetCount} catatan).`
+    );
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -247,12 +329,127 @@ export const RewardView: React.FC<RewardViewProps> = ({
         </div>
       </div>
 
+      {/* Action Notification Toast */}
+      {batchActionNotice && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl text-xs font-bold flex items-center justify-between gap-2 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{batchActionNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBatchActionNotice(null)}
+            className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Menu Poin Hapus Data Prestasi / Reward (Sebagian atau Seluruhnya) */}
+      <div className="bg-slate-50/90 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+              <ListChecks className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Menu Poin Hapus Data Prestasi / Reward</span>
+                <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-black">
+                  {filterKelas === 'all' ? 'Semua Kelas' : `Kelas ${filterKelas}`}
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-500">
+                Tandai catatan prestasi untuk menghapus sebagian atau seluruhnya pada kelas/sekolah.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 self-start sm:self-auto">
+            <span>Ditandai:</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-colors ${
+              selectedRewardIds.length > 0 ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-200 text-slate-600'
+            }`}>
+              {selectedRewardIds.length} Catatan
+            </span>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleSelectAllFilteredRewards}
+              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+            >
+              <CheckSquare className="w-3.5 h-3.5 text-amber-600" />
+              <span>
+                {filteredList.length > 0 && filteredList.every(i => selectedRewardsSet.has(i.id))
+                  ? 'Batal Tandai Semua Tampil'
+                  : `Tandai Semua yang Tampil (${filteredList.length})`}
+              </span>
+            </button>
+
+            {selectedRewardIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5 text-rose-600" />
+                <span>Batal Tandai</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tombol Hapus Sebagian */}
+            <button
+              type="button"
+              disabled={selectedRewardIds.length === 0}
+              onClick={() => setIsBatchDeleteModalOpen(true)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                selectedRewardIds.length > 0
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+              title={selectedRewardIds.length > 0 ? "Hapus prestasi yang ditandai" : "Tandai catatan terlebih dahulu"}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Hapus Sebagian ({selectedRewardIds.length} Terpilih)</span>
+            </button>
+
+            {/* Tombol Hapus Seluruhnya */}
+            <button
+              type="button"
+              onClick={() => setIsDeleteAllModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 transition-all flex items-center gap-1.5 cursor-pointer"
+              title={`Hapus seluruh catatan reward/prestasi di ${filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Semua Kelas'}`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-600 hover:text-white" />
+              <span>Hapus Seluruh Data {filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Sekolah'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Table Records */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-3.5 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={filteredList.length > 0 && filteredList.every(i => selectedRewardsSet.has(i.id))}
+                    onChange={handleSelectAllFilteredRewards}
+                    className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    title="Tandai / Batalkan semua baris yang tampil"
+                  />
+                </th>
                 <th className="py-3 px-4">Tanggal</th>
                 <th className="py-3 px-4">Siswa & Rombel</th>
                 <th className="py-3 px-4">Penghargaan & Kategori</th>
@@ -265,16 +462,34 @@ export const RewardView: React.FC<RewardViewProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-slate-400">
+                  <td colSpan={8} className="text-center py-10 text-slate-400">
                     Tidak ditemukan data reward yang sesuai kriteria pencarian.
                   </td>
                 </tr>
               ) : (
-                filteredList.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 px-4 whitespace-nowrap font-medium text-slate-700">
-                      {item.tanggal}
-                    </td>
+                filteredList.map((item) => {
+                  const isSelected = selectedRewardsSet.has(item.id);
+
+                  return (
+                    <tr 
+                      key={item.id} 
+                      className={`transition-colors ${
+                        isSelected ? 'bg-amber-50/60 hover:bg-amber-50/90' : 'hover:bg-slate-50/70'
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="py-3.5 px-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectReward(item.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                        />
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap font-medium text-slate-700">
+                        {item.tanggal}
+                      </td>
 
                     <td className="py-3.5 px-4">
                       <div className="font-bold text-slate-900">{item.namaSiswa}</div>
@@ -358,7 +573,8 @@ export const RewardView: React.FC<RewardViewProps> = ({
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>
@@ -714,6 +930,190 @@ export const RewardView: React.FC<RewardViewProps> = ({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Bottom Action Bar for Batch Delete */}
+      {selectedRewardIds.length > 0 && (
+        <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-slate-700 py-3 px-5 flex flex-wrap items-center justify-between gap-3 pointer-events-auto max-w-2xl w-full animate-in slide-in-from-bottom-5 duration-200">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-xs font-bold">
+                <strong className="text-amber-400 font-black">{selectedRewardIds.length}</strong> Catatan Prestasi Terpilih
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteModalOpen(true)}
+                className="px-4 py-1.5 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus {selectedRewardIds.length} Terpilih</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: HAPUS SEBAGIAN PRESTASI TERPILIH */}
+      {isBatchDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-rose-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-rose-700 to-rose-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Trash2 className="w-6 h-6 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">
+                    Hapus {selectedRewardIds.length} Catatan Prestasi
+                  </h3>
+                  <p className="text-xs text-rose-200">
+                    Konfirmasi penghapusan sebagian data prestasi dan apresiasi terpilih
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteModalOpen(false)}
+                className="p-1.5 rounded-lg text-rose-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl flex items-start gap-3 text-xs text-rose-950 leading-relaxed">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-extrabold block text-rose-950 mb-0.5">PERINGATAN PENGHAPUSAN:</strong>
+                  Anda akan menghapus <strong>{selectedRewardIds.length} catatan prestasi</strong> secara permanen. Tambahan poin apresiasi pada saldo karakter murid yang bersangkutan akan dikurangi secara otomatis.
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-1.5">
+                  <span>Daftar Prestasi yang Akan Dihapus:</span>
+                  <span className="text-slate-500 font-mono text-[11px]">{selectedRewardIds.length} catatan</span>
+                </div>
+                <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
+                  {selectedRewards.map(r => (
+                    <div key={r.id} className="p-2.5 flex items-center justify-between text-xs hover:bg-white transition-colors">
+                      <div>
+                        <div className="font-bold text-slate-900">{r.namaSiswa} <span className="font-normal text-slate-500">(Kelas {r.kelas})</span></div>
+                        <div className="text-[11px] text-slate-600">{r.jenisReward}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{r.tanggal} &bull; Tingkat {r.tingkat}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded font-bold text-[10px]">
+                          +{r.poin} Poin
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsBatchDeleteModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmBatchDelete}
+                  className="px-5 py-2 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Ya, Hapus {selectedRewardIds.length} Prestasi</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: HAPUS SELURUH DATA PRESTASI KELAS ATAU SEKOLAH */}
+      {isDeleteAllModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-rose-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-red-700 via-rose-800 to-rose-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Trash2 className="w-6 h-6 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">
+                    Hapus Seluruh Data Prestasi {filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Sekolah'}
+                  </h3>
+                  <p className="text-xs text-rose-200">
+                    Pembersihan seluruh catatan apresiasi di UPT SDN Kebonagung
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteAllModalOpen(false)}
+                className="p-1.5 rounded-lg text-rose-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl flex items-start gap-3 text-xs text-rose-950 leading-relaxed">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-extrabold block text-rose-950 mb-0.5">PERINGATAN BERSIHKAN DATA PRESTASI:</strong>
+                  Tindakan ini akan <strong>menghapus SELURUH ({filterKelas !== 'all' ? rewardList.filter(r => r.kelas === filterKelas).length : rewardList.length} catatan) data prestasi {filterKelas !== 'all' ? `di Kelas ${filterKelas}` : 'di seluruh sekolah'}</strong>. Poin apresiasi dan bonus nilai pada rapor murid akan diperbarui otomatis.
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
+                <div className="flex justify-between font-semibold text-slate-700">
+                  <span>Target Rombel / Kelas:</span>
+                  <span className="font-black text-rose-700">{filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Semua Rombel Sekolah'}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-slate-700">
+                  <span>Jumlah Catatan yang Akan Dihapus:</span>
+                  <span className="font-black text-slate-900 font-mono">
+                    {filterKelas !== 'all' ? rewardList.filter(r => r.kelas === filterKelas).length : rewardList.length} Catatan
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAllModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteAll}
+                  className="px-5 py-2 text-xs font-black text-white bg-rose-700 hover:bg-rose-800 rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Ya, Hapus Seluruh Data {filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Sekolah'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

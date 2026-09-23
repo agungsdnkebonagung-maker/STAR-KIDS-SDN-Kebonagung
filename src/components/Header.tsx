@@ -25,7 +25,8 @@ import {
   Sparkles,
   Globe,
   Phone,
-  RefreshCw
+  RefreshCw,
+  Compass
 } from 'lucide-react';
 
 export type AppTab = 
@@ -43,7 +44,8 @@ export type AppTab =
   | 'pegawai'
   | 'audit'
   | 'pengaturan'
-  | 'webprofil';
+  | 'webprofil'
+  | 'pengunjung';
 
 interface HeaderProps {
   currentTab: AppTab;
@@ -55,6 +57,7 @@ interface HeaderProps {
   tahunAjaran?: string;
   onRefreshData?: () => void;
   isRefreshing?: boolean;
+  onOpenGoogleSheets?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -66,7 +69,8 @@ export const Header: React.FC<HeaderProps> = ({
   schoolProfile,
   tahunAjaran,
   onRefreshData,
-  isRefreshing = false
+  isRefreshing = false,
+  onOpenGoogleSheets
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -85,9 +89,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   const primaryNavItems: { id: AppTab; label: string; icon: any }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'siswa', label: 'Data Siswa & Kelas', icon: Users },
     { id: 'absensi', label: 'Absensi', icon: ClipboardCheck },
     { id: 'pelanggaran', label: 'Pelanggaran', icon: AlertTriangle },
-    { id: 'reward', label: 'Reward', icon: Award },
+    { id: 'reward', label: 'Prestasi & Reward', icon: Award },
     { id: 'poin', label: 'Poin Karakter', icon: Coins },
     { id: 'monitoring', label: 'Monitoring TPPK', icon: ShieldAlert },
   ];
@@ -97,14 +102,14 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'statistik', label: 'Statistik & Analitik', icon: BarChart3, desc: 'Grafik komparatif & tren perilaku' },
     { id: 'laporan', label: 'Pusat Laporan & Surat', icon: FileText, desc: 'Cetak surat panggilan & rekap resmi' },
     { id: 'sync', label: 'Sinkronisasi Canva Sheet', icon: FileSpreadsheet, desc: 'Integrasi cloud spreadsheet & backup' },
-    { id: 'siswa', label: 'Data Siswa & Wali', icon: Users, adminOnly: true, desc: 'Kelola biodata murid (Hanya Admin)' },
     { id: 'pegawai', label: 'Data Pegawai & Guru', icon: Users, desc: 'Kepala Sekolah, Wali Kelas, Guru Mapel, TU & Staff' },
     { id: 'audit', label: 'Log Aktivitas (Audit)', icon: History, adminOnly: true, desc: 'Riwayat modifikasi data (Hanya Admin)' },
+    { id: 'pengunjung', label: 'Log Daftar Pengunjung', icon: Compass, adminOnly: true, desc: 'Monitoring identitas & lalu lintas pengunjung web (Khusus Admin)' },
     { id: 'pengaturan', label: 'Pengaturan Sekolah', icon: Settings, adminOnly: true, desc: 'Rombel, master data & kata sandi' },
     { id: 'webprofil', label: 'Website Profil Sekolah', icon: Globe, desc: 'Company profile publik UPT SDN Kebonagung' },
   ];
 
-  const visibleSecondary = secondaryNavItems.filter(item => !item.adminOnly || role === 'admin');
+  const visibleSecondary = secondaryNavItems;
 
   const isSecondaryActive = visibleSecondary.some(item => item.id === currentTab);
 
@@ -264,6 +269,30 @@ export const Header: React.FC<HeaderProps> = ({
                       );
                     })}
                   </div>
+
+                  {onOpenGoogleSheets && (
+                    <div className="p-1 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          onOpenGoogleSheets();
+                        }}
+                        className="w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 transition-colors cursor-pointer"
+                      >
+                        <div className="p-1.5 rounded-lg mt-0.5 bg-emerald-100 text-emerald-700">
+                          <FileSpreadsheet className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-950">Google Sheets Sync</span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold">Cloud</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate">Sinkronkan ke Google Spreadsheet</p>
+                        </div>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -272,6 +301,19 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* User Role & Auth Action */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Google Sheets Sync Button */}
+            {onOpenGoogleSheets && (
+              <button
+                type="button"
+                onClick={onOpenGoogleSheets}
+                title="Sinkronisasi Google Sheets"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 rounded-xl transition cursor-pointer shadow-2xs"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="hidden md:inline">Google Sheets</span>
+              </button>
+            )}
+
             {/* Refresh Data Button */}
             {onRefreshData && (
               <button
@@ -403,6 +445,25 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             );
           })}
+
+          {onOpenGoogleSheets && (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenGoogleSheets();
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-900 border border-emerald-200 mt-2 cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                <span>Google Sheets Sync</span>
+              </div>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-900 font-bold">
+                Cloud
+              </span>
+            </button>
+          )}
 
         </div>
       )}

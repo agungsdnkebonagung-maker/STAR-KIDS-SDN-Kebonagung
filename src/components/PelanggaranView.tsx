@@ -26,7 +26,11 @@ import {
   ShieldCheck,
   AlertCircle,
   Info,
-  UserCheck
+  UserCheck,
+  CheckSquare,
+  ListChecks,
+  CheckCheck,
+  Tag
 } from 'lucide-react';
 
 interface PelanggaranViewProps {
@@ -36,6 +40,8 @@ interface PelanggaranViewProps {
   onAddPelanggaran: (pelanggaran: Omit<PelanggaranRecord, 'id'>) => void;
   onUpdatePelanggaran: (id: string, updated: Partial<PelanggaranRecord>) => void;
   onDeletePelanggaran: (id: string) => void;
+  onBatchDeletePelanggaran?: (ids: string[]) => void;
+  onDeleteAllPelanggaran?: (kelas?: string) => void;
   onPrintSurat: (student: Student, pelanggaran: PelanggaranRecord) => void;
 }
 
@@ -46,11 +52,19 @@ export const PelanggaranView: React.FC<PelanggaranViewProps> = ({
   onAddPelanggaran,
   onUpdatePelanggaran,
   onDeletePelanggaran,
+  onBatchDeletePelanggaran,
+  onDeleteAllPelanggaran,
   onPrintSurat
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterKelas, setFilterKelas] = useState('all');
   const [filterKategori, setFilterKategori] = useState<'all' | KategoriPelanggaran>('all');
+
+  // Selection & Batch Delete States
+  const [selectedViolationIds, setSelectedViolationIds] = useState<string[]>([]);
+  const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false);
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+  const [batchActionNotice, setBatchActionNotice] = useState<string | null>(null);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -212,6 +226,74 @@ export const PelanggaranView: React.FC<PelanggaranViewProps> = ({
       return matchSearch && matchKelas && matchKategori;
     });
   }, [pelanggaranList, searchTerm, filterKelas, filterKategori]);
+
+  const selectedViolationsSet = useMemo(() => new Set(selectedViolationIds), [selectedViolationIds]);
+
+  const selectedViolations = useMemo(() => {
+    return pelanggaranList.filter(item => selectedViolationsSet.has(item.id));
+  }, [pelanggaranList, selectedViolationsSet]);
+
+  const handleToggleSelectViolation = (id: string) => {
+    setSelectedViolationIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllFilteredViolations = () => {
+    const allFilteredIds = filteredList.map(item => item.id);
+    const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedViolationsSet.has(id));
+
+    if (allSelected) {
+      setSelectedViolationIds(prev => prev.filter(id => !allFilteredIds.includes(id)));
+    } else {
+      const union = new Set([...selectedViolationIds, ...allFilteredIds]);
+      setSelectedViolationIds(Array.from(union));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedViolationIds([]);
+  };
+
+  const handleConfirmBatchDelete = () => {
+    if (selectedViolationIds.length === 0) return;
+    const count = selectedViolationIds.length;
+
+    if (onBatchDeletePelanggaran) {
+      onBatchDeletePelanggaran(selectedViolationIds);
+    } else {
+      selectedViolationIds.forEach(id => onDeletePelanggaran(id));
+    }
+
+    setSelectedViolationIds([]);
+    setIsBatchDeleteModalOpen(false);
+    setBatchActionNotice(`Berhasil menghapus sebagian (${count} catatan pelanggaran terpilih). Saldo karakter siswa otomatis dikalkulasi ulang.`);
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
+
+  const handleConfirmDeleteAll = () => {
+    const targetCount = filterKelas === 'all' 
+      ? pelanggaranList.length 
+      : pelanggaranList.filter(p => p.kelas === filterKelas).length;
+
+    if (onDeleteAllPelanggaran) {
+      onDeleteAllPelanggaran(filterKelas);
+    } else {
+      const targets = filterKelas === 'all' 
+        ? pelanggaranList 
+        : pelanggaranList.filter(p => p.kelas === filterKelas);
+      targets.forEach(p => onDeletePelanggaran(p.id));
+    }
+
+    setSelectedViolationIds([]);
+    setIsDeleteAllModalOpen(false);
+    setBatchActionNotice(
+      filterKelas === 'all'
+        ? `Berhasil menghapus seluruh catatan pelanggaran sekolah (${targetCount} catatan).`
+        : `Berhasil menghapus seluruh catatan pelanggaran Kelas ${filterKelas} (${targetCount} catatan).`
+    );
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
 
   // JIKA ROLE ADALAH VIEW_ONLY (ORANG TUA)
   // Sesuai permintaan: data pelanggaran tidak disajikan secara publik/umum,
@@ -503,12 +585,127 @@ export const PelanggaranView: React.FC<PelanggaranViewProps> = ({
         </div>
       </div>
 
+      {/* Action Notification Toast */}
+      {batchActionNotice && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl text-xs font-bold flex items-center justify-between gap-2 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{batchActionNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBatchActionNotice(null)}
+            className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Menu Poin Hapus Data Pelanggaran (Sebagian atau Seluruhnya) */}
+      <div className="bg-slate-50/90 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-800 flex items-center justify-center font-bold">
+              <ListChecks className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Menu Poin Hapus Data Pelanggaran</span>
+                <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-900 text-[10px] font-black">
+                  {filterKelas === 'all' ? 'Semua Kelas' : `Kelas ${filterKelas}`}
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-500">
+                Pilih atau tandai catatan pelanggaran untuk menghapus sebagian atau seluruhnya pada kelas/sekolah.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 self-start sm:self-auto">
+            <span>Ditandai:</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-colors ${
+              selectedViolationIds.length > 0 ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-200 text-slate-600'
+            }`}>
+              {selectedViolationIds.length} Catatan
+            </span>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleSelectAllFilteredViolations}
+              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+            >
+              <CheckSquare className="w-3.5 h-3.5 text-rose-600" />
+              <span>
+                {filteredList.length > 0 && filteredList.every(i => selectedViolationsSet.has(i.id))
+                  ? 'Batal Tandai Semua Tampil'
+                  : `Tandai Semua yang Tampil (${filteredList.length})`}
+              </span>
+            </button>
+
+            {selectedViolationIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5 text-rose-600" />
+                <span>Batal Tandai</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tombol Hapus Sebagian */}
+            <button
+              type="button"
+              disabled={selectedViolationIds.length === 0}
+              onClick={() => setIsBatchDeleteModalOpen(true)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                selectedViolationIds.length > 0
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+              title={selectedViolationIds.length > 0 ? "Hapus pelanggaran yang ditandai" : "Tandai catatan terlebih dahulu"}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Hapus Sebagian ({selectedViolationIds.length} Terpilih)</span>
+            </button>
+
+            {/* Tombol Hapus Seluruhnya */}
+            <button
+              type="button"
+              onClick={() => setIsDeleteAllModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 transition-all flex items-center gap-1.5 cursor-pointer"
+              title={`Hapus seluruh catatan pelanggaran di ${filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Semua Kelas'}`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-600 hover:text-white" />
+              <span>Hapus Seluruh Data {filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Sekolah'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Table Records */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-3.5 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={filteredList.length > 0 && filteredList.every(i => selectedViolationsSet.has(i.id))}
+                    onChange={handleSelectAllFilteredViolations}
+                    className="w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                    title="Tandai / Batalkan semua baris yang tampil"
+                  />
+                </th>
                 <th className="py-3 px-4">Tanggal & Waktu</th>
                 <th className="py-3 px-4">Siswa & Kelas</th>
                 <th className="py-3 px-4">Pelanggaran & Kategori</th>
@@ -521,16 +718,32 @@ export const PelanggaranView: React.FC<PelanggaranViewProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-slate-400">
+                  <td colSpan={8} className="text-center py-10 text-slate-400">
                     Tidak ditemukan data pelanggaran yang sesuai filter.
                   </td>
                 </tr>
               ) : (
                 filteredList.map((item) => {
                   const student = students.find(s => s.nisn === item.nisn);
+                  const isSelected = selectedViolationsSet.has(item.id);
 
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                    <tr 
+                      key={item.id} 
+                      className={`transition-colors ${
+                        isSelected ? 'bg-rose-50/50 hover:bg-rose-50/80' : 'hover:bg-slate-50/70'
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <td className="py-3.5 px-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectViolation(item.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                        />
+                      </td>
+
                       {/* Tanggal & Waktu */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="font-semibold text-slate-900">{item.tanggal}</div>
@@ -936,6 +1149,190 @@ export const PelanggaranView: React.FC<PelanggaranViewProps> = ({
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Bottom Action Bar for Batch Delete */}
+      {selectedViolationIds.length > 0 && (
+        <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-slate-700 py-3 px-5 flex flex-wrap items-center justify-between gap-3 pointer-events-auto max-w-2xl w-full animate-in slide-in-from-bottom-5 duration-200">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+              <span className="text-xs font-bold">
+                <strong className="text-rose-400 font-black">{selectedViolationIds.length}</strong> Catatan Pelanggaran Terpilih
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteModalOpen(true)}
+                className="px-4 py-1.5 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus {selectedViolationIds.length} Terpilih</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: HAPUS SEBAGIAN PELANGGARAN TERPILIH */}
+      {isBatchDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-rose-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-rose-700 to-rose-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Trash2 className="w-6 h-6 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">
+                    Hapus {selectedViolationIds.length} Catatan Pelanggaran
+                  </h3>
+                  <p className="text-xs text-rose-200">
+                    Konfirmasi penghapusan sebagian catatan disiplin terpilih
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteModalOpen(false)}
+                className="p-1.5 rounded-lg text-rose-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl flex items-start gap-3 text-xs text-rose-950 leading-relaxed">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-extrabold block text-rose-950 mb-0.5">PERINGATAN PENGHAPUSAN:</strong>
+                  Anda akan menghapus <strong>{selectedViolationIds.length} catatan pelanggaran</strong> secara permanen. Pengurangan poin pada saldo karakter siswa yang bersangkutan akan dikembalikan secara otomatis.
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-1.5">
+                  <span>Daftar Pelanggaran yang Akan Dihapus:</span>
+                  <span className="text-slate-500 font-mono text-[11px]">{selectedViolationIds.length} catatan</span>
+                </div>
+                <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
+                  {selectedViolations.map(v => (
+                    <div key={v.id} className="p-2.5 flex items-center justify-between text-xs hover:bg-white transition-colors">
+                      <div>
+                        <div className="font-bold text-slate-900">{v.namaSiswa} <span className="font-normal text-slate-500">(Kelas {v.kelas})</span></div>
+                        <div className="text-[11px] text-slate-600">{v.jenisPelanggaran}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{v.tanggal} &bull; {v.lokasiKejadian}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-bold text-[10px]">
+                          +{v.poin} Poin
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsBatchDeleteModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmBatchDelete}
+                  className="px-5 py-2 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Ya, Hapus {selectedViolationIds.length} Pelanggaran</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: HAPUS SELURUH DATA PELANGGARAN KELAS ATAU SEKOLAH */}
+      {isDeleteAllModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-rose-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-red-700 via-rose-800 to-rose-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Trash2 className="w-6 h-6 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">
+                    Hapus Seluruh Data Pelanggaran {filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Sekolah'}
+                  </h3>
+                  <p className="text-xs text-rose-200">
+                    Pembersihan seluruh catatan disiplin di UPT SDN Kebonagung
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteAllModalOpen(false)}
+                className="p-1.5 rounded-lg text-rose-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl flex items-start gap-3 text-xs text-rose-950 leading-relaxed">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-extrabold block text-rose-950 mb-0.5">PERINGATAN BERSIHKAN DATA:</strong>
+                  Tindakan ini akan <strong>menghapus SELURUH ({filterKelas !== 'all' ? pelanggaranList.filter(p => p.kelas === filterKelas).length : pelanggaranList.length} catatan) data pelanggaran {filterKelas !== 'all' ? `di Kelas ${filterKelas}` : 'di seluruh sekolah'}</strong>. Saldo karakter dan status risiko seluruh siswa akan diperbarui secara otomatis.
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
+                <div className="flex justify-between font-semibold text-slate-700">
+                  <span>Target Rombel / Kelas:</span>
+                  <span className="font-black text-rose-700">{filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Semua Rombel Sekolah'}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-slate-700">
+                  <span>Jumlah Catatan yang Akan Dihapus:</span>
+                  <span className="font-black text-slate-900 font-mono">
+                    {filterKelas !== 'all' ? pelanggaranList.filter(p => p.kelas === filterKelas).length : pelanggaranList.length} Catatan
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAllModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteAll}
+                  className="px-5 py-2 text-xs font-black text-white bg-rose-700 hover:bg-rose-800 rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Ya, Hapus Seluruh Data {filterKelas !== 'all' ? `Kelas ${filterKelas}` : 'Sekolah'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

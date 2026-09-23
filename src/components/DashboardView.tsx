@@ -49,7 +49,8 @@ import {
   ArrowRight,
   RefreshCw,
   Lock,
-  Search
+  Search,
+  Compass
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -65,6 +66,7 @@ interface DashboardViewProps {
   onRefreshData?: () => void;
   isRefreshing?: boolean;
   lastUpdatedTime?: string;
+  onNavigateToAbsensiKelas?: (kelas: string) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -79,7 +81,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   schoolProfile,
   onRefreshData,
   isRefreshing = false,
-  lastUpdatedTime
+  lastUpdatedTime,
+  onNavigateToAbsensiKelas
 }) => {
   const [selectedGradeForDetail, setSelectedGradeForDetail] = useState<number | null>(null);
   const [isMenuLengkapOpen, setIsMenuLengkapOpen] = useState(false);
@@ -981,11 +984,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           type="button"
                           onClick={() => {
                             setSelectedGradeForDetail(null);
-                            onNavigate('absensi');
+                            if (onNavigateToAbsensiKelas) {
+                              onNavigateToAbsensiKelas(rombel.kelas);
+                            } else {
+                              onNavigate('absensi');
+                            }
                           }}
                           className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer"
                         >
-                          Buka Absensi
+                          Buka Absensi {rombel.kelas}
                         </button>
                       </div>
                     </div>
@@ -1200,6 +1207,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 { tab: 'webprofil', label: 'Website Profil', desc: 'Company profile publik', icon: Globe, color: 'text-cyan-600 bg-cyan-50' },
                 { tab: 'pengaturan', label: 'Pengaturan Sistem', desc: 'Data sekolah & logo', icon: Settings, color: 'text-slate-700 bg-slate-100', adminOnly: true },
                 { tab: 'audit', label: 'Audit Log Keamanan', desc: 'Riwayat sistem', icon: History, color: 'text-orange-600 bg-orange-50', adminOnly: true },
+                { tab: 'pengunjung', label: 'Log Daftar Pengunjung', desc: 'Monitoring pengguna & device', icon: Compass, color: 'text-violet-600 bg-violet-50', adminOnly: true },
               ].map((m) => {
                 const IconComponent = m.icon;
                 return (

@@ -30,7 +30,16 @@ import {
   Layers,
   Check,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  CheckSquare,
+  Square,
+  MinusSquare,
+  CheckCheck,
+  Tag,
+  ArrowRightLeft,
+  ListChecks,
+  UserX,
+  ChevronDown
 } from 'lucide-react';
 
 interface SiswaViewProps {
@@ -42,6 +51,9 @@ interface SiswaViewProps {
   onBatchAddStudents?: (students: Student[]) => void;
   onUpdateStudent: (nisn: string, updated: Partial<Student>) => void;
   onDeleteStudent: (nisn: string) => void;
+  onBatchDeleteStudents?: (nisns: string[]) => void;
+  onDeleteAllStudentsInKelas?: (kelas: string) => void;
+  onBatchUpdateStudents?: (nisns: string[], updates: Partial<Student>) => void;
   onPrintStudentReport: (student: Student) => void;
 }
 
@@ -72,11 +84,22 @@ export const SiswaView: React.FC<SiswaViewProps> = ({
   onBatchAddStudents,
   onUpdateStudent,
   onDeleteStudent,
+  onBatchDeleteStudents,
+  onDeleteAllStudentsInKelas,
+  onBatchUpdateStudents,
   onPrintStudentReport
 }) => {
   const [selectedKelas, setSelectedKelas] = useState<string>('all');
   const [filterTingkat, setFilterTingkat] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Selection & Batch Action States
+  const [selectedNisns, setSelectedNisns] = useState<string[]>([]);
+  const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false);
+  const [isDeleteAllKelasModalOpen, setIsDeleteAllKelasModalOpen] = useState(false);
+  const [isBatchMoveModalOpen, setIsBatchMoveModalOpen] = useState(false);
+  const [targetMoveKelas, setTargetMoveKelas] = useState<string>('1A');
+  const [batchActionNotice, setBatchActionNotice] = useState<string | null>(null);
   
   // Student Details Modal
   const [detailStudent, setDetailStudent] = useState<Student | null>(null);
@@ -678,6 +701,157 @@ export const SiswaView: React.FC<SiswaViewProps> = ({
     return rewardList.filter(r => r.nisn === detailStudent.nisn);
   }, [rewardList, detailStudent]);
 
+  // Set of selected NISNs for O(1) lookups
+  const selectedNisnsSet = useMemo(() => new Set(selectedNisns), [selectedNisns]);
+
+  // Selected students objects
+  const selectedStudents = useMemo(() => {
+    return students.filter(s => selectedNisnsSet.has(s.nisn));
+  }, [students, selectedNisnsSet]);
+
+  // Classes breakdown of selected students
+  const selectedKelasBreakdown = useMemo(() => {
+    const map: Record<string, number> = {};
+    selectedStudents.forEach(s => {
+      map[s.kelas] = (map[s.kelas] || 0) + 1;
+    });
+    return Object.entries(map).map(([kelas, count]) => `Kelas ${kelas} (${count})`).join(', ');
+  }, [selectedStudents]);
+
+  // Toggle single student selection
+  const handleToggleSelectStudent = (nisn: string) => {
+    setSelectedNisns(prev => {
+      if (prev.includes(nisn)) {
+        return prev.filter(id => id !== nisn);
+      } else {
+        return [...prev, nisn];
+      }
+    });
+  };
+
+  // Select all in current view / current class
+  const handleSelectAllFiltered = () => {
+    const currentFilteredNisns = filteredStudents.map(s => s.nisn);
+    const allSelected = currentFilteredNisns.length > 0 && currentFilteredNisns.every(nisn => selectedNisnsSet.has(nisn));
+    if (allSelected) {
+      // Deselect all filtered
+      setSelectedNisns(prev => prev.filter(id => !currentFilteredNisns.includes(id)));
+    } else {
+      // Add all filtered to selection
+      const union = new Set([...selectedNisns, ...currentFilteredNisns]);
+      setSelectedNisns(Array.from(union));
+    }
+  };
+
+  // Quick select actions for specific class
+  const handleSelectByCriteria = (criteria: 'all_class' | 'berisiko' | 'waspada' | 'aman' | 'laki' | 'perempuan' | 'clear') => {
+    if (criteria === 'clear') {
+      setSelectedNisns([]);
+      return;
+    }
+
+    const pool = selectedKelas !== 'all' 
+      ? students.filter(s => s.kelas === selectedKelas) 
+      : filteredStudents;
+
+    let targetNisns: string[] = [];
+    if (criteria === 'all_class') {
+      targetNisns = pool.map(s => s.nisn);
+    } else if (criteria === 'berisiko') {
+      targetNisns = pool.filter(s => s.statusResiko === 'Berisiko').map(s => s.nisn);
+    } else if (criteria === 'waspada') {
+      targetNisns = pool.filter(s => s.statusResiko === 'Waspada').map(s => s.nisn);
+    } else if (criteria === 'aman') {
+      targetNisns = pool.filter(s => s.statusResiko === 'Aman').map(s => s.nisn);
+    } else if (criteria === 'laki') {
+      targetNisns = pool.filter(s => s.jenisKelamin === 'L').map(s => s.nisn);
+    } else if (criteria === 'perempuan') {
+      targetNisns = pool.filter(s => s.jenisKelamin === 'P').map(s => s.nisn);
+    }
+
+    const union = new Set([...selectedNisns, ...targetNisns]);
+    setSelectedNisns(Array.from(union));
+  };
+
+  // Batch delete execution
+  const handleConfirmBatchDelete = () => {
+    if (selectedNisns.length === 0) return;
+    const count = selectedNisns.length;
+
+    if (onBatchDeleteStudents) {
+      onBatchDeleteStudents(selectedNisns);
+    } else {
+      selectedNisns.forEach(nisn => onDeleteStudent(nisn));
+    }
+
+    setSelectedNisns([]);
+    setIsBatchDeleteModalOpen(false);
+    setBatchActionNotice(`Berhasil menghapus sebagian (${count} siswa terpilih) beserta riwayatnya.`);
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
+
+  // Delete all in class or school execution
+  const handleConfirmDeleteAllInKelas = () => {
+    const targets = selectedKelas === 'all' ? students : students.filter(s => s.kelas === selectedKelas);
+    const count = targets.length;
+
+    if (onDeleteAllStudentsInKelas) {
+      onDeleteAllStudentsInKelas(selectedKelas);
+    } else {
+      targets.forEach(s => onDeleteStudent(s.nisn));
+    }
+
+    setSelectedNisns([]);
+    setIsDeleteAllKelasModalOpen(false);
+    const notice = selectedKelas === 'all'
+      ? `Berhasil menghapus seluruh data siswa sekolah (${count} siswa).`
+      : `Berhasil menghapus seluruh data siswa (${count} siswa) di Kelas ${selectedKelas}.`;
+    setBatchActionNotice(notice);
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
+
+  // Batch status update execution
+  const handleBatchUpdateStatus = (newStatus: StatusResiko) => {
+    if (selectedNisns.length === 0) return;
+    const count = selectedNisns.length;
+
+    if (onBatchUpdateStudents) {
+      onBatchUpdateStudents(selectedNisns, { statusResiko: newStatus });
+    } else {
+      selectedNisns.forEach(nisn => onUpdateStudent(nisn, { statusResiko: newStatus }));
+    }
+
+    setBatchActionNotice(`Berhasil menandai ${count} siswa dengan status "${newStatus}".`);
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
+
+  // Batch move class execution
+  const handleConfirmBatchMove = () => {
+    if (selectedNisns.length === 0) return;
+    const count = selectedNisns.length;
+    const wali = WALI_KELAS_MAP[targetMoveKelas] || 'Wali Kelas SDN Kebonagung';
+    const nip = WALI_KELAS_NIP_MAP[targetMoveKelas] || '';
+
+    if (onBatchUpdateStudents) {
+      onBatchUpdateStudents(selectedNisns, {
+        kelas: targetMoveKelas,
+        waliKelas: wali,
+        nipWaliKelas: nip
+      });
+    } else {
+      selectedNisns.forEach(nisn => onUpdateStudent(nisn, {
+        kelas: targetMoveKelas,
+        waliKelas: wali,
+        nipWaliKelas: nip
+      }));
+    }
+
+    setIsBatchMoveModalOpen(false);
+    setSelectedNisns([]);
+    setBatchActionNotice(`Berhasil memindahkan ${count} siswa ke Rombel Kelas ${targetMoveKelas}.`);
+    setTimeout(() => setBatchActionNotice(null), 5000);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -850,7 +1024,249 @@ export const SiswaView: React.FC<SiswaViewProps> = ({
             />
           </div>
         </div>
+
+        {/* Menu Seleksi Siswa Pada Masing-Masing Kelas & Aksi Cepat */}
+        <div className="pt-2">
+          <div className="bg-slate-50/90 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                  <ListChecks className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>Menu Memilih Siswa</span>
+                    <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-900 text-[10px] font-black">
+                      {selectedKelas === 'all' ? 'Semua 28 Rombel' : `Kelas ${selectedKelas}`}
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Tandai siswa dalam rombel ini untuk mengubah status karakter atau menghapus data secara bersamaan.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 self-start sm:self-auto">
+                <span>Ditandai:</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-black transition-colors ${
+                  selectedNisns.length > 0 ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  {selectedNisns.length} Siswa
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Selection Buttons */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-200/70">
+              <span className="text-[10.5px] font-bold text-slate-500 mr-1 flex items-center gap-1">
+                <Tag className="w-3 h-3 text-slate-400" />
+                Tandai Cepat:
+              </span>
+              
+              <button
+                type="button"
+                onClick={() => handleSelectByCriteria('all_class')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-blue-50 text-blue-900 border border-slate-200 hover:border-blue-300 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                title="Tandai semua siswa yang ada di kelas atau filter ini"
+              >
+                <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
+                <span>Semua Siswa {selectedKelas !== 'all' ? `Kelas ${selectedKelas}` : 'Tampil'} ({selectedKelas !== 'all' ? students.filter(s => s.kelas === selectedKelas).length : filteredStudents.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectByCriteria('berisiko')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-rose-50 text-rose-800 border border-slate-200 hover:border-rose-300 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                <span>Berisiko</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectByCriteria('waspada')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-amber-50 text-amber-800 border border-slate-200 hover:border-amber-300 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span>Waspada</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectByCriteria('laki')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-sky-50 text-sky-800 border border-slate-200 hover:border-sky-300 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <span>Laki-laki (L)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSelectByCriteria('perempuan')}
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-pink-50 text-pink-800 border border-slate-200 hover:border-pink-300 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <span>Perempuan (P)</span>
+              </button>
+
+              {selectedNisns.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleSelectByCriteria('clear')}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all flex items-center gap-1 cursor-pointer ml-auto"
+                >
+                  <X className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Batal Tandai ({selectedNisns.length})</span>
+                </button>
+              )}
+            </div>
+
+            {/* Menu Point Hapus Data Kelas (Sebagian atau Seluruhnya) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+              <div className="flex items-center gap-1.5 text-xs text-slate-700">
+                <Trash2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span className="font-extrabold text-slate-800">Menu Hapus Data Kelas:</span>
+                <span className="text-[11px] text-slate-500 hidden sm:inline">Pilih hapus sebagian (siswa terpilih) atau seluruh data kelas</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Hapus Sebagian */}
+                <button
+                  type="button"
+                  disabled={selectedNisns.length === 0}
+                  onClick={() => setIsBatchDeleteModalOpen(true)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    selectedNisns.length > 0
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                  title={selectedNisns.length > 0 ? "Hapus siswa yang ditandai" : "Tandai minimal 1 siswa untuk menghapus sebagian"}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Hapus Sebagian ({selectedNisns.length} Siswa Terpilih)</span>
+                </button>
+
+                {/* Hapus Seluruhnya */}
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAllKelasModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 transition-all flex items-center gap-1.5 cursor-pointer"
+                  title={`Hapus seluruh data siswa di ${selectedKelas !== 'all' ? `Kelas ${selectedKelas}` : 'Semua Rombel'}`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600 hover:text-white" />
+                  <span>Hapus Seluruh Data {selectedKelas !== 'all' ? `Kelas ${selectedKelas}` : 'Sekolah'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Batch Action Notification Toast */}
+      {batchActionNotice && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl text-xs font-bold flex items-center justify-between gap-2 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{batchActionNotice}</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setBatchActionNotice(null)} 
+            className="text-slate-400 hover:text-slate-700 p-1"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Bilah Aktifitas Bersamaan (Sticky Batch Toolbar) */}
+      {selectedNisns.length > 0 && (
+        <div className="sticky top-2 z-20 bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white rounded-2xl p-4 shadow-xl border border-indigo-500/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center shrink-0">
+              <CheckCheck className="w-5 h-5 text-blue-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-black text-white">
+                  {selectedNisns.length} Siswa Terpilih / Ditandai
+                </h4>
+                <span className="bg-blue-400/20 text-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-400/30">
+                  Aktifitas Bersamaan
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 max-w-xl truncate mt-0.5">
+                {selectedKelasBreakdown || 'Pilihan aktif dari berbagai rombel'}
+              </p>
+            </div>
+          </div>
+
+          {/* Batch activities group */}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            {/* Tandai Status Karakter */}
+            <div className="flex items-center gap-1 bg-white/10 rounded-xl p-1 border border-white/15">
+              <span className="text-[10px] font-bold text-slate-300 px-1.5 flex items-center gap-1">
+                <Tag className="w-3 h-3 text-amber-300" />
+                Tandai Status:
+              </span>
+              <button
+                type="button"
+                onClick={() => handleBatchUpdateStatus('Aman')}
+                title="Tandai Status Aman untuk semua siswa terpilih"
+                className="px-2 py-1 rounded-lg text-[11px] font-bold bg-emerald-600/80 hover:bg-emerald-600 text-white transition-all cursor-pointer"
+              >
+                Aman
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBatchUpdateStatus('Waspada')}
+                title="Tandai Status Waspada untuk semua siswa terpilih"
+                className="px-2 py-1 rounded-lg text-[11px] font-bold bg-amber-600/80 hover:bg-amber-600 text-white transition-all cursor-pointer"
+              >
+                Waspada
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBatchUpdateStatus('Berisiko')}
+                title="Tandai Status Berisiko untuk semua siswa terpilih"
+                className="px-2 py-1 rounded-lg text-[11px] font-bold bg-rose-600/80 hover:bg-rose-600 text-white transition-all cursor-pointer"
+              >
+                Berisiko
+              </button>
+            </div>
+
+            {/* Pindahkan Rombel Bersamaan */}
+            <button
+              type="button"
+              onClick={() => setIsBatchMoveModalOpen(true)}
+              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Pindahkan siswa terpilih ke kelas lain sekaligus"
+            >
+              <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-200" />
+              <span>Pindahkan Kelas</span>
+            </button>
+
+            {/* Hapus Bersamaan */}
+            <button
+              type="button"
+              onClick={() => setIsBatchDeleteModalOpen(true)}
+              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black shadow-md transition-all flex items-center gap-1.5 cursor-pointer ml-auto md:ml-0"
+              title="Hapus seluruh data siswa yang ditandai secara bersamaan"
+            >
+              <Trash2 className="w-4 h-4 text-white" />
+              <span>Hapus Bersamaan ({selectedNisns.length})</span>
+            </button>
+
+            {/* Batal */}
+            <button
+              type="button"
+              onClick={() => setSelectedNisns([])}
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              title="Batal Memilih Semua"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Students Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -858,6 +1274,26 @@ export const SiswaView: React.FC<SiswaViewProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                {/* Master Checkbox Column */}
+                <th className="py-3 px-3.5 w-12 text-center">
+                  <input
+                    type="checkbox"
+                    aria-label="Pilih Semua Siswa yang Tampil"
+                    checked={
+                      filteredStudents.length > 0 &&
+                      filteredStudents.every(s => selectedNisnsSet.has(s.nisn))
+                    }
+                    ref={el => {
+                      if (el) {
+                        const someSelected = filteredStudents.some(s => selectedNisnsSet.has(s.nisn));
+                        const allSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedNisnsSet.has(s.nisn));
+                        el.indeterminate = someSelected && !allSelected;
+                      }
+                    }}
+                    onChange={handleSelectAllFiltered}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
                 <th className="py-3 px-4">NISN</th>
                 <th className="py-3 px-4">Nama Lengkap & Gender</th>
                 <th className="py-3 px-4">Kelas & Wali Kelas</th>
@@ -870,18 +1306,45 @@ export const SiswaView: React.FC<SiswaViewProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-400">
+                  <td colSpan={8} className="text-center py-12 text-slate-400">
                     <Users className="w-10 h-10 mx-auto text-slate-300 mb-2" />
                     <p className="font-semibold">Tidak ada data siswa pada rombel atau filter ini.</p>
                     <p className="text-[11px] mt-1 text-slate-400">Gunakan tombol <strong>Input Cepat & Import Excel</strong> untuk memasukkan data siswa dengan cepat.</p>
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((s) => (
-                  <tr key={s.nisn} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-semibold text-slate-700">
-                      {s.nisn}
-                    </td>
+                filteredStudents.map((s) => {
+                  const isSelected = selectedNisnsSet.has(s.nisn);
+                  return (
+                    <tr 
+                      key={s.nisn} 
+                      className={`transition-colors ${
+                        isSelected 
+                          ? 'bg-blue-50/80 border-l-4 border-blue-600 font-medium' 
+                          : 'hover:bg-slate-50/70'
+                      }`}
+                    >
+                      {/* Row Checkbox Column */}
+                      <td className="py-3.5 px-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          aria-label={`Pilih siswa ${s.namaLengkap}`}
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectStudent(s.nisn)}
+                          className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{s.nisn}</span>
+                          {isSelected && (
+                            <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 text-[9px] font-black uppercase">
+                              Dipilih
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
                     <td className="py-3.5 px-4">
                       <div className="font-bold text-slate-900 flex items-center gap-1.5">
@@ -994,7 +1457,8 @@ export const SiswaView: React.FC<SiswaViewProps> = ({
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>
@@ -1987,6 +2451,235 @@ export const SiswaView: React.FC<SiswaViewProps> = ({
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: KONFIRMASI HAPUS DATA SISWA SECARA BERSAMAAN */}
+      {/* ========================================================================= */}
+      {isBatchDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-rose-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-rose-700 via-rose-800 to-red-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Trash2 className="w-6 h-6 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">
+                    Hapus {selectedNisns.length} Data Siswa Bersamaan
+                  </h3>
+                  <p className="text-xs text-rose-200">
+                    Konfirmasi penghapusan massal data siswa SDN Kebonagung
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchDeleteModalOpen(false)}
+                className="p-1.5 rounded-lg text-rose-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3 text-xs text-rose-900 leading-relaxed">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-extrabold block text-rose-950 mb-0.5">Peringatan Penghapusan Bersamaan:</strong>
+                  Tindakan ini akan <strong>menghapus permanen {selectedNisns.length} siswa terpilih</strong> beserta seluruh catatan presensi, riwayat pelanggaran tata tertib, dan piagam reward karakter yang terkait. Tindakan ini tidak dapat dibatalkan.
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                  <span>Daftar Siswa yang Akan Dihapus:</span>
+                  <span className="text-slate-500 font-mono text-[11px]">{selectedNisns.length} siswa</span>
+                </div>
+                <div className="max-h-56 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
+                  {selectedStudents.map(st => (
+                    <div key={st.nisn} className="p-2.5 flex items-center justify-between text-xs hover:bg-white transition-colors">
+                      <div>
+                        <div className="font-bold text-slate-900">{st.namaLengkap}</div>
+                        <div className="text-[11px] text-slate-500 font-mono">NISN: {st.nisn}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="px-2 py-0.5 bg-slate-200 text-slate-800 rounded font-bold text-[10px]">
+                          Kelas {st.kelas}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsBatchDeleteModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmBatchDelete}
+                  className="px-5 py-2 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Ya, Hapus {selectedNisns.length} Siswa Secara Bersamaan</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: HAPUS SELURUH DATA SISWA DI KELAS ATAU SEKOLAH */}
+      {/* ========================================================================= */}
+      {isDeleteAllKelasModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-rose-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-red-700 via-rose-800 to-rose-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <Trash2 className="w-6 h-6 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">
+                    Hapus Seluruh Data Siswa {selectedKelas !== 'all' ? `Kelas ${selectedKelas}` : 'Sekolah'}
+                  </h3>
+                  <p className="text-xs text-rose-200">
+                    Konfirmasi penghapusan seluruh data rombel di UPT SDN Kebonagung
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteAllKelasModalOpen(false)}
+                className="p-1.5 rounded-lg text-rose-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl flex items-start gap-3 text-xs text-rose-950 leading-relaxed">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-extrabold block text-rose-950 mb-0.5">PERINGATAN PENGHAPUSAN SELURUH DATA KELAS:</strong>
+                  Tindakan ini akan <strong>menghapus SELURUH data siswa ({selectedKelas !== 'all' ? students.filter(s => s.kelas === selectedKelas).length : students.length} siswa) {selectedKelas !== 'all' ? `di Kelas ${selectedKelas}` : 'di seluruh sekolah'}</strong> beserta seluruh data absensi, riwayat pelanggaran, dan prestasi terkait. Tindakan ini tidak dapat dibatalkan.
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
+                <div className="flex justify-between font-semibold text-slate-700">
+                  <span>Target Rombel / Kelas:</span>
+                  <span className="font-black text-rose-700">{selectedKelas !== 'all' ? `Kelas ${selectedKelas}` : 'Semua 28 Rombel Sekolah'}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-slate-700">
+                  <span>Jumlah Siswa yang Akan Dihapus:</span>
+                  <span className="font-black text-slate-900 font-mono">
+                    {selectedKelas !== 'all' ? students.filter(s => s.kelas === selectedKelas).length : students.length} Siswa
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAllKelasModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteAllInKelas}
+                  className="px-5 py-2 text-xs font-black text-white bg-rose-700 hover:bg-rose-800 rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Ya, Hapus Seluruh Data {selectedKelas !== 'all' ? `Kelas ${selectedKelas}` : 'Sekolah'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: MUTASI / PINDAH ROMBEL KELAS SECARA BERSAMAAN */}
+      {/* ========================================================================= */}
+      {isBatchMoveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-indigo-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-indigo-800 to-blue-900 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <ArrowRightLeft className="w-6 h-6 text-indigo-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">
+                    Pindahkan {selectedNisns.length} Siswa Terpilih
+                  </h3>
+                  <p className="text-xs text-indigo-200">
+                    Mutasi rombel atau kenaikan kelas secara bersamaan
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchMoveModalOpen(false)}
+                className="p-1.5 rounded-lg text-indigo-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Pilih Rombel Kelas Tujuan (28 Rombel Resmi):
+                </label>
+                <select
+                  value={targetMoveKelas}
+                  onChange={(e) => setTargetMoveKelas(e.target.value)}
+                  className="w-full p-2.5 text-xs font-bold border border-slate-300 rounded-xl bg-slate-50 focus:ring-2 focus:ring-indigo-500"
+                >
+                  {DAFTAR_KELAS.map(k => (
+                    <option key={k} value={k}>
+                      Kelas {k} — Wali: {WALI_KELAS_MAP[k] || '-'}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Wali kelas & NIP wali kelas seluruh siswa yang ditandai akan disesuaikan otomatis dengan rombel baru.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsBatchMoveModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmBatchMove}
+                  className="px-5 py-2 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ArrowRightLeft className="w-4 h-4" />
+                  <span>Pindahkan ke Kelas {targetMoveKelas}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

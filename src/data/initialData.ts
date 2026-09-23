@@ -11,6 +11,7 @@ import {
   SchoolProfileData,
   AuditLog
 } from '../types';
+import { KELAS_1A_STUDENTS, generateKelas1AAttendance } from './kelas1AData';
 
 export const INITIAL_STUDENTS: Student[] = [
   // Kelas 6A
@@ -294,24 +295,9 @@ export const INITIAL_STUDENTS: Student[] = [
     totalPoinReward: 40,
     statusResiko: 'Aman'
   },
-  // Kelas 1A & 1B
-  {
-    nisn: '0123456797',
-    namaLengkap: 'Qori Rayyan Al-Ghifari',
-    jenisKelamin: 'L',
-    tempatLahir: 'Pasuruan',
-    tanggalLahir: '2019-03-14',
-    agama: 'Islam',
-    kelas: '1A',
-    waliKelas: 'Siti Rahmawati, S.Pd.',
-    nipWaliKelas: '19840512 200902 2 006',
-    namaOrangTua: 'Ghifari',
-    noHpOrangTua: '085788990011',
-    alamat: 'Jl. Kebonagung Lor No. 8, Pasuruan',
-    totalPoinPelanggaran: 5,
-    totalPoinReward: 25,
-    statusResiko: 'Aman'
-  },
+  // Kelas 1A (28 Siswa Resmi Rombel 1A SDN Kebonagung)
+  ...KELAS_1A_STUDENTS,
+  // Kelas 1B
   {
     nisn: '0123456798',
     namaLengkap: 'Rania Zahra Humaira',
@@ -327,23 +313,6 @@ export const INITIAL_STUDENTS: Student[] = [
     alamat: 'Jl. Kebonagung Kulon No. 16, Pasuruan',
     totalPoinPelanggaran: 0,
     totalPoinReward: 35,
-    statusResiko: 'Aman'
-  },
-  {
-    nisn: '0123456799',
-    namaLengkap: 'Syamil Zhafran Maulana',
-    jenisKelamin: 'L',
-    tempatLahir: 'Pasuruan',
-    tanggalLahir: '2019-01-05',
-    agama: 'Islam',
-    kelas: '1A',
-    waliKelas: 'Siti Rahmawati, S.Pd.',
-    nipWaliKelas: '19840512 200902 2 006',
-    namaOrangTua: 'Maulana Malik',
-    noHpOrangTua: '085733445566',
-    alamat: 'Jl. Veteran Gg. 4 No. 10, Pasuruan',
-    totalPoinPelanggaran: 0,
-    totalPoinReward: 30,
     statusResiko: 'Aman'
   },
   {
@@ -1209,6 +1178,9 @@ export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
   // Data historis 2026-09-14
   { id: 'ATT-14-01', tanggal: '2026-09-14', nisn: '0123456786', nama: 'Fahri Ramadhan Al-Farizi', kelas: '5A', status: 'Alpa', keterangan: 'Tanpa kabar', inputOleh: 'Ahmad Fauzi, S.Pd.I.', timestamp: '2026-09-14 07:45', syncedToSheet: true },
   { id: 'ATT-14-02', tanggal: '2026-09-14', nisn: '0123456807', nama: 'Bagus Tri Pamungkas', kelas: '5A', status: 'Alpa', keterangan: 'Tanpa surat', inputOleh: 'Ahmad Fauzi, S.Pd.I.', timestamp: '2026-09-14 07:45', syncedToSheet: true },
+
+  // Presensi Lengkap Kelas 1A (28 Siswa) Hari Ini & Historis
+  ...generateKelas1AAttendance()
 ];
 
 

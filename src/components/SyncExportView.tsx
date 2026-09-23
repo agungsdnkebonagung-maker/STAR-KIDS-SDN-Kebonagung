@@ -26,6 +26,7 @@ interface SyncExportViewProps {
   onUpdateSyncConfig: (updated: Partial<CanvaSyncConfig>) => void;
   onTriggerSync: () => Promise<void>;
   onImportStudents: (newStudents: Student[]) => void;
+  onOpenGoogleSheets?: () => void;
 }
 
 export const SyncExportView: React.FC<SyncExportViewProps> = ({
@@ -36,7 +37,8 @@ export const SyncExportView: React.FC<SyncExportViewProps> = ({
   role,
   onUpdateSyncConfig,
   onTriggerSync,
-  onImportStudents
+  onImportStudents,
+  onOpenGoogleSheets
 }) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSuccessMsg, setSyncSuccessMsg] = useState('');
@@ -277,6 +279,36 @@ export const SyncExportView: React.FC<SyncExportViewProps> = ({
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           <span className="font-semibold">{syncSuccessMsg}</span>
+        </div>
+      )}
+
+      {/* Google Sheets Workspace Integration Card */}
+      {onOpenGoogleSheets && (
+        <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-blue-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border border-emerald-600/50">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0 shadow-inner">
+              <FileSpreadsheet className="w-8 h-8 text-emerald-300" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black tracking-tight">Sinkronisasi Google Sheets & Google Drive</h2>
+                <span className="bg-emerald-400/20 text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-300/30 uppercase tracking-wider">
+                  Live OAuth
+                </span>
+              </div>
+              <p className="text-xs text-emerald-100/90 max-w-2xl leading-relaxed">
+                Hubungkan langsung akun Google sekolah Anda untuk ekspor otomatis 7 tab dokumen spreadsheet (Profil, Siswa, Presensi Harian, Guru, Rombel, Pelanggaran, dan Reward) atau impor data siswa secara realtime.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenGoogleSheets}
+            className="px-5 py-2.5 bg-white hover:bg-emerald-50 text-emerald-900 rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+            <span>Kelola Google Sheets</span>
+          </button>
         </div>
       )}
 
